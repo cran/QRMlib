@@ -21,7 +21,6 @@ whether logarithm of function should be returned; default is FALSE
 vector of values of psi or digamma function 
 }
 \seealso{
-   \code{\link{besselM3}},
-   \code{\link{gamma}}
+   \code{\link{besselM3}}
 }
 \keyword{math}

@@ -31,7 +31,6 @@ are mean and standard deviation; default is FALSE
 quantiles for Student's t distribution 
 }
 \seealso{
-   \code{\link{qt}},
    \code{\link{ESst}}
 }
 \examples{

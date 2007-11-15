@@ -12,7 +12,7 @@ plotTail(object, extend=2, fineness=1000, ...)
 }
 \arguments{
 \item{object}{
-result of fitting GPD to excesses over a high threshold 
+return value from fitting GPD to excesses over a high threshold via fit.GPD 
 }
 \item{extend}{
 how far plot should extend expressed as multiple of largest data value 
@@ -36,7 +36,7 @@ see pages 282-284 in QRM
 }
 \examples{
 data(danish);
-mod <- fit.GPD(danish,10); 
+mod <- fit.GPD(danish,threshold=10); 
 mod$par.ests; 
 plotTail(mod); 
 }

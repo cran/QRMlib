@@ -35,7 +35,6 @@ see pages 354-355 and pages 375-377 of QRM
    \code{\link{rlogitnorm}}
 }
 \examples{
-\dontrun{
 pi <- 0.04896; #one obligor defaulting pi = .04896 
 pi2 <- 0.00321; #two obligors defaulting jointly pi2 = .0031265
 beta.pars <- cal.beta(pi,pi2); 
@@ -46,7 +45,6 @@ M.beta <- rbinomial.mixture(n,m,"beta",shape1=beta.pars[1],
          shape2=beta.pars[2]); 
 M.probitnorm <- rbinomial.mixture(n,m,"probitnorm",
     mu=probitnorm.pars[1],sigma=probitnorm.pars[2]); 
-}
 }
 \keyword{distribution}
 

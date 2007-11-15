@@ -30,7 +30,6 @@ see pages 229-231 of QRM
 }
 
 \examples{
-\dontrun{
 # Multivariate Fitting with Gauss and t: Simulation
 # Create an equicorrelation matrix:
 P <- equicorr(3,0.6);
@@ -41,7 +40,6 @@ Udatasim2 <- rcopula.t(1000,df=10,Sigma=P);
 #and the fit.tcopula.rank() method:
 mod.t2 <- fit.tcopula.rank(Udatasim2);
 mod.t2;
-}
 }
 \keyword{methods}
 

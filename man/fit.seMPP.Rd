@@ -36,18 +36,5 @@ window <- (seriesPositions(sp500.nreturns) >
 sp500.nreturns <- sp500.nreturns[window]; 
 tmp <- extremalPP(sp500.nreturns,ne=100); 
 mod3a <- fit.seMPP(tmp,mark.influence=FALSE,std.errs=TRUE);
-\dontrun{ 
-mod3b <- fit.seMPP(tmp,mark.influence=TRUE,std.errs=TRUE); 
-mod3c <- fit.seMPP(tmp,model="ETAS",mark.influence=FALSE,std.errs=TRUE); 
-mod3d <- fit.seMPP(tmp,model="ETAS",mark.influence=TRUE,std.errs=TRUE); 
-mod4a <- fit.seMPP(tmp,mark.influence=FALSE,predictable=TRUE,
-           std.errs=TRUE); 
-mod4b <- fit.seMPP(tmp,mark.influence=TRUE,predictable=TRUE,
-         std.errs=TRUE); 
-mod4c <- fit.seMPP(tmp,model="ETAS",mark.influence=FALSE,
-                   predictable=TRUE,std.errs=TRUE); 
-mod4d <- fit.seMPP(tmp,model="ETAS",mark.influence=TRUE,
-                   predictable=TRUE,std.errs=TRUE);
-}
 }
 \keyword{methods }

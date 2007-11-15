@@ -46,11 +46,10 @@ JRM Hosking and JR Wallis, Technometrics 29(3), pages 339-349, 1987.
    \code{\link{RiskMeasures}}
 }
 \examples{
-\dontrun{
+data(danish);
 losses <- seriesData(danish); 
-mod <- fit.GPDb(losses,10); 
-mod$par.ests ;
-}
+mod <- fit.GPDb(losses,threshold=10); 
+mod;
 }
 \keyword{methods}
 

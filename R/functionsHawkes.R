@@ -1,4 +1,4 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
 # Copyright (C) 2005-06 Alexander McNeil 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch */
+# Contact: Alexander J. McNeil:  a.j.mcneil@hw.ac.uk
 # R-language contact: Scott Ulman : scottulman@hotmail.com 
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 
@@ -31,21 +31,25 @@
 #########################################################
 #SU.  11/7/2006. R-language modifications require substantial rewrite
 #R does not contain a "series" type data item.  Hence data parameter must represent
-#either vector, a single column from a matrix or data.frame, or a timeSeries. 
+#either vector, a single column from a matrix or data.frame, or a timeSeries with
+#a single data column. 
 #This method returns an MPP class which contains the following list:
 # list(times=times, marks=marks, starttime=starttime, endtime=endtime, threshold=threshold)
 extremalPP <- function(data,threshold=NA, nextremes=NA)
 {
-    #In R, the data parameter is either a timeSeries or a vector,matrix,dataframe; there is no "series" 
+    #In R, the data parameter is either a timeSeries with a single item in the data slot
+    # or a vector of data; there is no "series" object.  If you pass in a matrix or data.frame
+    # the program will select column 2 since column 1 is generally the DATE item.
     #object as in S-Plus
     #if(is(data, "series")) 
     if(is.timeSeries(data)) 
     {
       isTS <- TRUE;
       pos <- seriesPositions(data);
-      #SU: In the S-Plus code, 'alltimes' represents the julian day count between the date in the vector
-      #and the origin = '1/1/1960'.  R-language julian day counts are relative to origin='1/1/1970'. Hence
-      #we must ADD 3653 days to the R-day count to replicate S-Plus results. Replace the following S-Plus line:
+      #SU: In the S-Plus code, 'alltimes' represents the julian day count 
+      #between the date in the vector and the origin = '1/1/1960'.  R-language julian 
+      #day counts are relative to origin='1/1/1970'. Hence we must ADD 3653 days to the 
+      #R-day count to replicate S-Plus results. Replace the following S-Plus line:
       #alltimes <- pos@.Data[[1]]
       #by the next three lines to get an integer vector.  
       tD <- timeDate(data@positions)
@@ -54,7 +58,10 @@ extremalPP <- function(data,threshold=NA, nextremes=NA)
       #convert to integer vector with cast. The integer cast is necessary to get rid of the
       # comment prepending the integer which says "the number of days in the timeDiff is".
       alltimes <- as.integer(alltimes);
-      values <- seriesData(data);
+      #11/8/2007: we must convert "values" to a vector so replace the following line with 
+      #its successor:
+      #values <- seriesData(data);
+      values <- as.vector(data@Data[ ,1]); #using first data column if there is more than one
       #startime is first julian day count reduced by 1:
       starttime <- alltimes[1]-1;
       endtime <- alltimes[length(alltimes)];
@@ -63,7 +70,15 @@ extremalPP <- function(data,threshold=NA, nextremes=NA)
     else
     {
       isTS <- FALSE;
-      values <- data;;
+      #11/08/2007: added cases for vector, data.frame, matrix
+      if(is.vector(data))
+          values <- data
+      else if (is.data.frame(data))
+          values <- data[ , 2] #using 2nd column since DATE is usually column 1
+      else if (is.matrix(data))
+          values <- data[ , 1]
+      else
+           stop("Input data is not appropriate vector, data.frame, or matrix");
       n <- length(values);
       alltimes <- (1:n)/n;
       starttime <- 0;
@@ -71,10 +86,11 @@ extremalPP <- function(data,threshold=NA, nextremes=NA)
     }
     if(is.na(nextremes) && is.na(threshold))
       stop("Either a threshold or the number of upper extremes must be supplied.")
-    if(!is.na(nextremes))
-      threshold <- findthreshold(values, nextremes)
+    if(!is.na(nextremes)){
+      threshold <- findthreshold(values, nextremes);}
     #Note the 'times' represent the julian day count since 1/1/1960 (S-Plus origin) when
-    #each threshold exceedance occurs:
+    #each threshold exceedance occurs when inputting a timeSeries; they represent equally spaced
+    #times between 0 and 1 when the input data is merely a vector:
     times <- alltimes[values>threshold]
     #Note the 'marks' represent the value of the exceedance, i.e. the amount by which the
     #value exceeds the threshold 
@@ -84,7 +100,6 @@ extremalPP <- function(data,threshold=NA, nextremes=NA)
     oldClass(out) <- c("MPP")
     out
 }
-
 ########################################################
 #This function takes a Marked Point Process (MPP) item, removed the 'marks' slot, and changes
 #the name of the class to "PP" from "MPP"
@@ -128,11 +143,13 @@ plot.PP <- function(x,...)
   endtime <- x$endtime
   #times when exceedances occurred.  We have removed marks which gave size of exceedances.
   times <- x$times  
-  #In S-Plus, stepfun() is stepfun(datax, datay, type="left"). The parameters 'datax' and 'datay'
-  #may be of the same length and give the locations of the jumps. Values of 'datax' MUST BE in INCREASING ORDER.
-  #They are here since datax=times will be the Julian data counts on successive times exceedances occurred.
-  #However, in R, 'datay' must be a vector one longer than x (so there is a y[0]).  Then we want x[1] as the value between
-  #y[1]-y[0], x[2] as the value between y[2]-y[1], etc. Hence we build a vector of values increasing by 1 like a count:1,2,3...
+  #In S-Plus, stepfun() is stepfun(datax, datay, type="left"). The parameters 'datax' 
+  #and 'datay' may be of the same length and give the locations of the jumps. Values 
+  #of 'datax' MUST BE in INCREASING ORDER. They are here since datax=times will be the 
+  #Julian data counts on successive times exceedances occurred.
+  #However, in R, 'datay' must be a vector one longer than x (so there is a y[0]).  
+  #Then we want x[1] as the value between y[1]-y[0], x[2] as the value between y[2]-y[1], etc. 
+  #Hence we build a vector of values increasing by 1 like a count:1,2,3...
   augLength <- length(times)+1;
   count <- 1:augLength;
   #SU: 11/7/2006. This function is currently deprecated in S-Plus. It has a different syntax

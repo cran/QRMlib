@@ -33,16 +33,4 @@ see page 192 of QRM for Clayton copula
    \code{\link{dcopula.t}},
    \code{\link{dcopula.gumbel}}
 }
-\examples{
-\dontrun{
-#define a function:
-normal.metaclayton <- function(x,theta);
-{
-  exp(dcopula.clayton(apply(x,2,pnorm),theta,logvalue=TRUE) + 
-  apply(log(apply(x,2,dnorm)),1,sum));
-}
-#use function to create perspective plot for bivariate density: 
-BiDensPlot(normal.metaclayton,xpts=ll,ypts=ll,npts=80,theta=2.2);
-}
-}
 \keyword{distribution}

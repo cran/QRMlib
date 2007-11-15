@@ -42,9 +42,8 @@ see pages 353-354 in QRM
    \code{\link{dclaytonmix}}
 }
 \examples{
-\dontrun{
 #MODEL RISK See especially Section 8.4.6 on p. 364 of QRM book
-spdata.raw;
+data(spdata.raw);
 attach(spdata.raw);
 pi.B <- momest(Bdefaults, Bobligors)[1];#one obligor defaulting pi = .04896
 #second value returned is probability of joint default probability for two firms.
@@ -67,7 +66,7 @@ q <- q[q<0.25];
 #0.2, the density should be about 2.0 (dF(x)/dx).
 d.probitnorm <- dprobitnorm(q,probitnorm.pars[1],probitnorm.pars[2]);
 }
-}
+
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{distribution}
 

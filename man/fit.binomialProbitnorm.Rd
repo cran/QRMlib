@@ -54,12 +54,10 @@ list containing parameter estimates and details of fit
 }
 
 \examples{
-\dontrun{
-spdata.raw; 
+data(spdata.raw); 
 attach(spdata.raw); 
 BdefaultRate <- Bdefaults/Bobligors; 
 mod2 <- fit.binomialProbitnorm(Bdefaults, Bobligors); 
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{methods}

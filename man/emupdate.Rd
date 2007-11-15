@@ -35,7 +35,8 @@ logical variable for elliptically symmetric case
 do we scale determinant of Sigma to be fixed value? 
 }
 \item{kvalue}{
-value of determinant in the case of scaling 
+value of determinant in the case of scaling. If not scaling, 
+you do not need to pass this parameter but can let R set its default.
 }
 }
 \value{

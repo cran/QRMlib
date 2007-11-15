@@ -46,12 +46,6 @@ DJ30daily <- Ret.DJ[sample1,];
 DJ30daily <- 100*seriesData(DJ30daily); 
 rseries <- DJ30daily[,"MSFT"]; 
 mod.NIG <- fit.NH(rseries);
-\dontrun{
-mod.gauss <- fit.norm(rseries);
-mod.t <- fit.st(rseries); 
-mod.hyp <- fit.NH(rseries,case="hyp"); 
-c(mod.gauss$ll.max,mod.t$ll.max,mod.NIG$ll.max,mod.hyp$ll.max); 
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{methods}

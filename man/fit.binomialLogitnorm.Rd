@@ -53,13 +53,11 @@ list containing parameter estimates and details of fit:
    \code{\link{fit.binomialProbitnorm}}
 }
 \examples{
-\dontrun{
-spdata.raw; 
+data(spdata.raw); 
 attach(spdata.raw); 
 BdefaultRate <- Bdefaults/Bobligors; 
 # A little patience is required for the next model ... 
 mod3 <- fit.binomialLogitnorm(Bdefaults, Bobligors); 
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{methods}

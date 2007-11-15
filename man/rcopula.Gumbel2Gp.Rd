@@ -29,7 +29,6 @@ see page 227 of QRM for an example of construction
 }
 \seealso{
    \code{\link{rAC}},
-   \code{\link{rcopula.AGumbel}},
    \code{\link{rcopula.GumbelNested}}
 }
 \examples{

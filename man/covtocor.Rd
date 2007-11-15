@@ -23,7 +23,6 @@ a correlation matrix
 }
 \seealso{
    \code{\link{equicorr}}
-   \code{\link{cov2cor}}
 }
 
 \keyword{array}

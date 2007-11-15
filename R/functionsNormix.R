@@ -1,7 +1,7 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
-# Copyright (C) 2005-06 Alexander McNeil
+# Copyright (C) 2005-07 Alexander McNeil
 # R-language additions Copyright (C) 2006-2007 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch */
+# Contact: Alexander J. McNeil:  a.j.mcneil@hw.ac.uk 
 # Contact for R-language translation: Scott Ulman: scottulman@hotmail.com
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 
@@ -29,184 +29,178 @@
 #   Error in func(data, ...) : F used instead of FALSE
 #   Execution halted
 ##########################################################################
-# 06/06/2006: SU added comments:
 #This module contains functions to build random samples and distributions for NORMAL MIXTURE models
 #as described in Chapter 3 of QRM (especially section 3.2)
  
 #Generate a random sample from the GIG (Generalized Inverse Gaussian) distribution.
 # See p. 77 of QRM text.  Note this function calls a C-language function from QRSim.c
 # to do the bulk of the work.  This method was evidently suggested by Atkinson in 1982.
-# SU: 06/06/2006: replaced original S-Plus code with the following (making changes where indicated).
 # This function generates a random series for the Generalized Inverse Gaussian family.
 # When this function is called from other functions in the QRMlib or from chapter scripts,
 # its return value is assumed to be a vector of simulated values.
+#This function was rewritten by SU on 11/2/2007 to eliminate all assign() statements
 rGIG <- function(n, lambda, chi, psi, envplot = FALSE, messages = FALSE)
 {
-	if((chi < 0) | (psi < 0))
-		stop("Invalid parameters for GIG")
-	if((chi == 0) & (lambda <= 0))
-		stop("Invalid parameters for GIG")
-	if((psi == 0) & (lambda >= 0))
-		stop("Invalid parameters for GIG")
-	if((chi == 0) & (lambda > 0))
-		return(rgamma(n, shape = lambda, rate = (psi/2)))
-	if((psi == 0) & (lambda < 0))
-		return(1/rgamma(n, shape = ( - lambda), rate = (chi/2)))
-	message <- NULL
-	if(abs(lambda) < 1)
-		message <- paste(message, 
-			"Not necessarily efficient rejection method", "\n")
-	neglambda <- F
-	if(lambda < 0) {
-		neglambda = TRUE
-		lambda <- abs(lambda)
-		tmp <- c(chi, psi)
-		chi <- tmp[2]
-		psi <- tmp[1]
-	}
+   if((chi < 0) | (psi < 0))
+     stop("Invalid parameters for GIG with chi, psi both negative");
+   if((chi == 0) & (lambda <= 0))
+     stop("Invalid parameters for GIG with chi=0 and lambda <=0");
+   if((psi == 0) & (lambda >= 0))
+     stop("Invalid parameters for GIG with psi=0 and lambda>=0");
+   if((chi == 0) & (lambda > 0))
+     return(rgamma(n, shape = lambda, rate = (psi/2)));
+   if((psi == 0) & (lambda < 0))
+     return(1/rgamma(n, shape = ( - lambda), rate = (chi/2)));
+   message <- NULL;
+   if(abs(lambda) < 1)
+     message <- paste(message, "Not necessarily efficient rejection method", "\n");
+   neglambda <- FALSE;
+   if(lambda < 0) 
+   {
+     neglambda = TRUE;
+     lambda <- abs(lambda);
+     tmp <- c(chi, psi);
+     #switch values of chi and psi:
+     chi <- tmp[2];
+     psi <- tmp[1];
+   }
 
-     	efunc <- function(x, lambda, chi, psi)
-	{
-		(x^(lambda - 1)) * exp( - (chi/x + psi * x)/2)
-	}
-	calcmode <- function(lambda, chi, psi)
-	{
-		if(psi > 0)
-			return(((lambda - 1) + sqrt(chi * psi + (1 - lambda)^
-				2))/psi)
-		else if(psi == 0)
-			return(chi/(2 - 2 * lambda))
-		else stop("Problem in mode function")
-	}
-	themode <- calcmode(lambda, chi, psi)
+   #Local function:
+   efunc <- function(x, lambda, chi, psi)
+   {
+     (x^(lambda - 1)) * exp( - (chi/x + psi * x)/2);
+   }
+   #Local function:
+   calcmode <- function(lambda, chi, psi)
+   {
+     if(psi > 0)
+       return(((lambda - 1) + sqrt(chi * psi + (1 - lambda)^2))/psi)
+     else if(psi == 0)
+	return(chi/(2 - 2 * lambda))
+     else stop("Problem in mode function")
+   }
 
-      
-      #SU: 06/06/2006. The following are attempts to setup "global" variables in S-Plus.
-      #assign("lambda", lambda, frame = 1)
-      #The values frame = 1 must be replaced by env=parent.frame() or by env=.GlobalEnv 
-      assign("lambda.nl", lambda, env = .GlobalEnv)  #env = parent.frame())
-	assign("chi.nl", chi, env = .GlobalEnv)      #env = parent.frame())
-	assign("psi.nl", psi, env = .GlobalEnv)      #env = parent.frame())
-	assign("themode", themode, env = .GlobalEnv) #env = parent.frame())
-	assign("calcmode", calcmode, env = .GlobalEnv) #env = parent.frame())
-	assign("efunc", efunc, env = .GlobalEnv)     #env = parent.frame())
-            
-	if(lambda < 1) {
-            #there is only one parameter theta and we minimize relative to it: 
-		theta <- 0.01
-		objective <- function(theta)
-		{
-			if(theta <= 0)
-				out <- NA
-			else {
-				Delta1 <- (exp(themode * theta) - 1)/theta
-				Delta2 <- (2 * exp(( - themode * psi.nl)/2))/psi.nl
-				xL <- calcmode(lambda.nl, chi.nl, psi.nl + 2 * theta)
-				xH <- chi.nl/(2 - 2 * lambda.nl)
-				S1 <- efunc(xL, lambda.nl, chi.nl, psi.nl + 2 * theta)
-				S2 <- efunc(xH, lambda.nl, chi.nl, 0)
-				out <- Delta1 * S1 + Delta2 * S2
-			}
-			out
-		}
-	}
-	else {
-            #there are two parameters (the spar and the ppar) and we minimize with respect to them.
-            # spar will be extracted from theta[1] and ppar will be extracted from theta[2]
-            #initialize theta[1] and theta[2]
-		theta <- c(0.01, psi/4)
-		objective <- function(theta)
-		{
-			if((theta[1] <= 0) | (theta[2] <= 0))
-				out <- NA
-			else if((psi.nl - 2 * theta[2]) < 0)
-				out <- NA
-			else {
-				Delta1 <- (exp(themode * theta[1]) - 1)/theta[1]
-				Delta2 <- exp( - themode * theta[2])/theta[2]
-				xL <- calcmode(lambda.nl, chi.nl, psi.nl + 2 * theta[1])
-				xH <- calcmode(lambda.nl, chi.nl, psi.nl - 2 * theta[2])
-				S1 <- efunc(xL, lambda.nl, chi.nl, psi.nl + 2 * theta[1])
-				S2 <- efunc(xH, lambda.nl, chi.nl, psi.nl - 2 * theta[2])
-				out <- Delta1 * S1 + Delta2 * S2
-			}
-			out
-		}
-	}
+   #Local function (to be called only when lambda < 1 so only one theta parameter with which to optimize
+   objectiveOneParam <- function(theta,lambda, chi, psi, themode)
+   {
+       if(lambda >= 1) stop("lambda must be less than 1 to call objectiveOneParam\n");
+              
+       if(length(theta)!= 1) stop("theta must be a single number in objectiveOneParam\n");
+       if(theta <= 0)
+         out <- NA
+       else 
+       {
+         Delta1 <- (exp(themode * theta) - 1)/theta;
+         Delta2 <- (2 * exp(( - themode * psi)/2))/psi;
+         xL <- calcmode(lambda, chi, psi + 2 * theta);
+         xH <- chi/(2 - 2 * lambda);
+         #Call nested local functions:
+         S1 <- efunc(xL, lambda, chi, psi + 2 * theta);
+         S2 <- efunc(xH, lambda, chi, 0);
+         out <- Delta1 * S1 + Delta2 * S2;
+       } #end else
+       out;
+   } # end objectiveOneParam()
 
+   #Local function (to be called only when lambda >= 1 so two theta parameters exist to optimize
+   objectiveTwoParams <- function(theta, lambda, chi, psi, themode)
+   {
+       if(lambda < 1) stop("lambda must be at least equal to 1 to call objectiveTwoParam\n");
+       if(length(theta)!= 2) stop("theta must be vector of length 2 in objectiveTwoParams\n");
 
-      #SU: 06/07/2006. Tried to replace all S-Plus nlmin(f,x) calls by calls to R-function nlm(f,p)
-      # However, all calls to nlm() FAILED with error messages like
-      #  Error in nlm(objective, c(0.98, 0.5)) : invalid function value in 'nlm' optimizer
-      # Hence I had to try optim()using the BFGS method
-      #If lambda is less than 1, there is only one parameter theta[1] in the objective function
-      if(lambda < 1)
-         optimout <- optim(c(.25), objective, method="BFGS")
-      else
-         optimout <- optim(c(.01,.25), objective, method="BFGS")
-      
-      if(optimout$convergence != 0)
-      { 
-		message <- paste(optimout$message, 
-			"Problems finding optimal s and p (use option envplot for reassurance)",
-			"\n")
-            print(message)
-      }
-	if(lambda < 1) {
-		spar <- optimout$par[1]
-		ppar <- psi/2
-	}
-	else {
-		spar <- optimout$par[1]
-		ppar <- optimout$par[2]
-	}
+       if((theta[1] <= 0) | (theta[2] <= 0))
+         out <- NA
+       else if((psi - 2 * theta[2]) < 0)
+	  out <- NA
+       else 
+       {
+         Delta1 <- (exp(themode * theta[1]) - 1)/theta[1];
+         Delta2 <- exp( - themode * theta[2])/theta[2];
+         xL <- calcmode(lambda, chi, psi + 2 * theta[1]);
+         xH <- calcmode(lambda, chi, psi - 2 * theta[2]);
+         S1 <- efunc(xL, lambda, chi, psi + 2 * theta[1]);
+         S2 <- efunc(xH, lambda, chi, psi - 2 * theta[2]);
+         out <- Delta1 * S1 + Delta2 * S2;
+       } #end else
+       out;
+  } #end objectiveTwoParams() 
 
-      #Calculate new values for xL, xH, etc using the parameters spar and ppar estimated
-	xL <- calcmode(lambda, chi, psi + 2 * spar)
-	xH <- calcmode(lambda, chi, psi - 2 * ppar)
-	S1 <- efunc(xL, lambda, chi, psi + 2 * spar)
-	S2 <- efunc(xH, lambda, chi, psi - 2 * ppar)
-	Delta1 <- (exp(themode * spar) - 1)/spar
-	Delta2 <- exp( - themode * ppar)/ppar
-	k <- 1/((Delta1/S2) + (Delta2/S1))
-	k1 <- k/S2
-	k2 <- k/S1
-	rpar <- k1 * Delta1
-	if(envplot) {
-		xdat <- seq(from = 0.01, to = themode * 20, length = 1000)
-		envelope2 <- (xdat <= themode) * exp(spar * xdat) * S1 + (
-			xdat > themode) * exp( - ppar * xdat) * S2
-		envelope <- (xdat <= themode) * exp(spar * xdat) * k1 + (xdat >
-			themode) * exp( - ppar * xdat) * k2
-		ydat <- efunc(xdat, lambda, chi, psi)
-		yr <- range(ydat, envelope, envelope2)
-		plot(xdat, ydat, ylim = yr, type = "l")
-		abline(v = themode)
-		lines(xdat, envelope, col = 2)
-		lines(xdat, envelope2, lty = 2, col = 2)
-	}
-      #SU more test lines
-	#  check1 <- k1*Delta1+k2*Delta2
-	#  check2 <- c(k1/S1,k2/S2)
-	#  print(paste("Check1: Area=",check1))
-	#  print(paste("Check2: Equality",check2))
-      # end test lines 
+  #Call internal function:
+  themode <- calcmode(lambda, chi, psi);
 
-      #Initialize the xsim vector to all 0s.  
-      xsim <- rep(0, n)
-      #Initialize new to n:
-      new = n
+  #Initialize theta depending upon lambda value and call optim() using one of the 
+  #two appropriate objective functions:
+  if(lambda < 1) 
+  {
+     #there is only one parameter theta and we minimize relative to it: 
+     lambdaLOW <- TRUE;
+     theta <- 0.01;
+     optimout <- optim(c(0.25), objectiveOneParam, gr=NULL, lambda=lambda,chi=chi,
+         psi=psi, themode=themode, method="BFGS");
+     spar <- optimout$par[1];
+     ppar <- psi/2;
+  }
+  else
+  {
+     #there are two parameters (the spar and the ppar) and we minimize with respect to them.
+     # spar will be extracted from theta[1] and ppar will be extracted from theta[2]
+     #initialize theta[1] and theta[2]
+     lambdaLOW <- FALSE;
+     theta <- c(0.01, psi/4);
+     optimout <- optim(c(.01,.25), objectiveTwoParams, gr=NULL, lambda=lambda,chi=chi,
+         psi=psi, themode=themode, method="BFGS");
+     spar <- optimout$par[1];
+     ppar <- optimout$par[2];
+   }
 
-     # SU 06/02/2006: made changes for consistency with R rather than S-Plus
-     # The method call in C-language is 
-     # void rgig(long *n, double *r, double *s, double *p, double *k1, double *k2, 
-     # double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim)
-     # This C-language function resets the values of both n (the 1st parameter) and xsim (the last parameter).
-     # Note that when a .C() call is invoked in R or SPlus, ALL ARGUMENTS to the function are returned
-     # as a LIST UNLESS you set one of the parameters up as a result by using notation like
-     # res=as.integer(n) and then follow the function call with with the name of the individual list
-     # element to return like ... PACKAGE="QRMlib")$res as the end of the function call.
-      tmp <- .C("rgig",
+   if(optimout$convergence != 0)
+   { 
+     message <- paste(optimout$message, 
+           "Problems finding optimal s and p (use option envplot for reassurance)","\n");
+     print(message);
+   } #end if no convergence
+  
+   #Calculate new values for xL, xH, etc using the parameters spar and ppar estimated
+   xL <- calcmode(lambda, chi, psi + 2 * spar);
+   xH <- calcmode(lambda, chi, psi - 2 * ppar);
+   S1 <- efunc(xL, lambda, chi, psi + 2 * spar);
+   S2 <- efunc(xH, lambda, chi, psi - 2 * ppar);
+   Delta1 <- (exp(themode * spar) - 1)/spar;
+   Delta2 <- exp( - themode * ppar)/ppar;
+   k <- 1/((Delta1/S2) + (Delta2/S1));
+   k1 <- k/S2;
+   k2 <- k/S1;
+   rpar <- k1 * Delta1;
+   if(envplot) 
+   {
+     xdat <- seq(from = 0.01, to = themode * 20, length = 1000);
+     envelope2 <- (xdat <= themode) * exp(spar * xdat) * S1 + 
+			(xdat > themode) * exp( - ppar * xdat) * S2;
+     envelope <- (xdat <= themode) * exp(spar * xdat) * k1 + (xdat >
+			themode) * exp( - ppar * xdat) * k2;
+     ydat <- efunc(xdat, lambda, chi, psi);
+     yr <- range(ydat, envelope, envelope2);
+     plot(xdat, ydat, ylim = yr, type = "l");
+     abline(v = themode);
+     lines(xdat, envelope, col = 2);
+     lines(xdat, envelope2, lty = 2, col = 2);
+   } #end if envplot
+   
+   #Initialize the xsim vector to all 0s.  
+   xsim <- rep(0, n);
+   #Initialize new to n:
+   new = n;
+
+   # SU 06/02/2006: made changes for consistency with R rather than S-Plus
+   # The method call in C-language is 
+   # void rgig(long *n, double *r, double *s, double *p, double *k1, double *k2, 
+   # double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim)
+   # This C-language function resets the values of both n (the 1st parameter) and xsim (the last parameter).
+   # Note that when a .C() call is invoked in R or SPlus, ALL ARGUMENTS to the function are returned
+   # as a LIST UNLESS you set one of the parameters up as a result by using notation like
+   # res=as.integer(n) and then follow the function call with with the name of the individual list
+   # element to return like ... PACKAGE="QRMlib")$res as the end of the function call.
+   tmp <- .C("rgig",
             #the parameter n is changed by the function call:
 		new = as.integer(n),  
 		as.double(rpar),
@@ -223,36 +217,19 @@ rGIG <- function(n, lambda, chi, psi, envplot = FALSE, messages = FALSE)
 		xsim = as.double(xsim), 
             # Use the list variable $xsim to indicate we want tmp to be replaced by xsim
             # so we will return only the simulated values rather than the whole list
-            PACKAGE="QRMlib") $xsim
+            PACKAGE="QRMlib") $xsim;
 
-      efficiency <- n/new
-      #SU test lines only
-      #print(paste("tmp is ",tmp)) #tmp should have been changed to $xsim
-      #print(paste("efficiency is ", efficiency))
+   efficiency <- n/new;
+   
+   message <- paste(message, "Efficiency", round(efficiency * 100, 1),"\n");
+   if(messages)
+     cat(message);
 
-  	message <- paste(message, "Efficiency", round(efficiency * 100, 1),
-		"\n")
-	if(messages)
-		cat(message)
-
-     #07/18/2006: SU removed all 'assigned' parent environment variables:
-     if(!is.null(chi.nl))
-       rm(chi.nl, envir = .GlobalEnv)
-     if(!is.null(psi.nl))
-       rm(psi.nl, envir = .GlobalEnv)     
-     if(!is.null(lambda.nl))
-       rm(lambda.nl, envir = .GlobalEnv)     
-     if(!is.null(themode))
-       rm(themode, envir = .GlobalEnv)     
-     if(!is.null(efunc))
-       rm(efunc, envir = .GlobalEnv)     
-     if(!is.null(calcmode))
-       rm(calcmode, envir = .GlobalEnv)
-
-     if(neglambda)
-          return(1/tmp)  #tmp should now equal xsim due to listing $xsim after function call
-      else return(tmp)  #tmp now equal to xsim due to listing $xsim after function call
-
+   #SU removed all 'assigned' parent environment variables:
+   
+   if(neglambda)
+       return(1/tmp)  #tmp should now equal xsim due to listing $xsim after function call
+   else return(tmp);  #tmp now equal to xsim due to listing $xsim after function call
 }
 ###########################################################################
 
@@ -477,84 +454,104 @@ besselM3 <- function(lambda = 9/2, x = 2, logvalue = FALSE)
 }
 
 #############################################################################
-
+#Simulate a multivariate generalized hyperbolic sample
 rmghyp <- function(n,lambda,chi,psi,Sigma = equicorr(d, rho), mu = rep(0, d), gamma=rep(0,d),d = 2, rho = 0.7) 
 {
-   	d <- dim(Sigma)[1.]
-        W <- rGIG(n,lambda,chi,psi)
-        m1 <- rmnorm(n, Sigma = Sigma)
-	m2 <- matrix(rep(sqrt(W), d), ncol = d)
-        offsetmatrix <- matrix(gamma, nrow = n, ncol = d, byrow = TRUE)
-	mu.matrix <- matrix(mu, nrow = n, ncol = d, byrow = TRUE)
-	return(m1 * m2 + offsetmatrix * m2^2 + mu.matrix)
+     d <- dim(Sigma)[1.]
+     W <- rGIG(n,lambda,chi,psi)
+      m1 <- rmnorm(n, Sigma = Sigma)
+      m2 <- matrix(rep(sqrt(W), d), ncol = d)
+      offsetmatrix <- matrix(gamma, nrow = n, ncol = d, byrow = TRUE)
+      mu.matrix <- matrix(mu, nrow = n, ncol = d, byrow = TRUE)
+      return(m1 * m2 + offsetmatrix * m2^2 + mu.matrix)
 }
 
 
 ##########################################################################################
 #fit to a normalized hyperbolic.  See pp. 81-85 of QRM
-fit.mNH <- function(data=data.hyp.5d,symmetric=FALSE,case="NIG",kvalue=NA,nit=2000,tol=1e-10)
-  {
-    if (is.matrix(data)==FALSE) data <- as.matrix(data)
-    mix.pars <- switch(case,NIG=c(-0.5,1,1),hyp=c(1,1,1))
-    optpars <- c(2,3)
-    optfunc <- function(thepars){
-      MCECM.Qfunc(mix.pars.nl[1],thepars[1],thepars[2],greek.stats[[1]],greek.stats[[2]],greek.stats[[3]])
+fit.mNH <- function(data,symmetric=FALSE,case="NIG",kvalue=NA,nit=2000,tol=1e-10)
+{
+    if (is.matrix(data)==FALSE) data <- as.matrix(data);
+    mix.pars <- switch(case,NIG=c(-0.5,1,1),hyp=c(1,1,1));
+    optpars <- c(2,3);
+
+    #optfunc() will be passed to MCECMupdate() below as an argument to be passed to optim().  
+    #11/1/2007: added two additional parameters: "mixparam" will be mix.pars[1]and
+    #"greeks" will be a list holding delta (vector), eta (vector), xi (scalar) respectively.
+    #These parameters will be set (rather than globally assign()ed in MCECMupdate()prior to 
+    #its call to optim() where it passes optfunc() and the extra parameters defined in this 
+    #new version of optfunc(). CRITICALLY, the mixparam in fit.mNH() is mix.pars[1] whereas
+    #it is mix.pars[3] in fit.mst()
+    optfunc <- function(thepars, mixparams, greeks)
+    {
+      #parameters in order interpreted as lambda,chi,psi,delta,eta,xi:
+      if(!is.list(greeks)) stop("greeks must be a list");
+      if(!is.vector(mixparams)) stop("mixparams argument to optfunc() must be vector");
+      MCECM.Qfunc(mixparams[1],thepars[1],thepars[2],greeks[[1]],greeks[[2]],greeks[[3]]);
     }
-    n <- dim(data)[1]
-    d <- dim(data)[2]
-    Xbar <- apply(data,2,mean)
-    mu <- Xbar
-    Sigma <- var(data)
-    if (is.na(kvalue)) kvalue <- det(Sigma)
-    gamma <- rep(0,length(mu))
-    scale.factor <- (det(Sigma)/kvalue)^(1/d)
-    Sigma <- Sigma/scale.factor
-    i <- 0
-    ll <-  sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE))
-    closeness <- 100
-    while ((closeness > tol) & (i < nit)){
-      i <- i+1
-      EMresult <- EMupdate(data,mix.pars,mu,Sigma,gamma,symmetric,scaling=TRUE,kvalue)
-      mu <- EMresult$mu
-      Sigma <- EMresult$Sigma
-      gamma <- EMresult$gamma
-      MCECMresult <- MCECMupdate(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=FALSE)
-      mix.pars <- MCECMresult$mix.pars
-      conv <- MCECMresult$conv
-      conv.type <- MCECMresult$convtype
-      ll.old <- ll
-      ll <- sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE))
-      closeness <- abs((ll-ll.old)/ll.old)
-      #SU: 07/27/2006: suppressed messages about convergence in next two lines:
-      #message <- paste("It",i,conv,"Closeness",signif(closeness,3),"; L-Likelihood",signif(ll,10),"; 
-      #mix-pars",round(mix.pars[1],2),round(mix.pars[2],2),round(mix.pars[3],2),conv.type)
-      #print(message)
-        }
-    lambda <- mix.pars[1]
-    chi <- mix.pars[2]
-    psi <- mix.pars[3]
-    mult <- det(Sigma)^(-1/d)
-    Sigma <- Sigma*mult
-    chi <- chi/mult
-    psi <- psi*mult
-    gamma <- gamma*mult
-    mix.pars <- c(lambda,chi,psi)
-    names(mix.pars) <- c("lambda","chi","psi")
-    EW <- EGIG(lambda,chi,psi)
-    EW2 <- EGIG(lambda,chi,psi,2)
-    varW <- EW2-EW^2
-    beta <- as.vector(solve(Sigma) %*% gamma)
-    mean <- as.numeric(mu+EW*gamma)
-    covariance <- EW*Sigma + varW*outer(gamma,gamma)
+
+    #OLD METHOD NOW DEPRECATED BECAUSE IT IMPLICITLY RELIES ON ASSIGN()
+    #optfunc <- function(thepars)
+    #{
+    #  MCECM.Qfunc(mix.pars.nl[1],thepars[1],thepars[2],greek.stats[[1]],greek.stats[[2]],greek.stats[[3]])
+    #}
+
+    n <- dim(data)[1];
+    d <- dim(data)[2];
+    Xbar <- apply(data,2,mean);
+    mu <- Xbar;
+    Sigma <- var(data);
+
+    #Test kvalue passed in as parameter; it NA, set it via Sigma:
+    if (is.na(kvalue)) kvalue <- det(Sigma);
+    gamma <- rep(0,length(mu));
+    scale.factor <- (det(Sigma)/kvalue)^(1/d);
+    Sigma <- Sigma/scale.factor;
+    i <- 0;
+    #Use multivariate generalized hyperbolic distribution to sum the densities across data observations:
+    ll <-  sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE));
+    closeness <- 100;
+    while ((closeness > tol) & (i < nit))
+    {
+      i <- i+1;
+      EMresult <- EMupdate(data,mix.pars,mu,Sigma,gamma,symmetric,scaling=TRUE,kvalue);
+      mu <- EMresult$mu;
+      Sigma <- EMresult$Sigma;
+      gamma <- EMresult$gamma;
+
+      MCECMresult <- MCECMupdate(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=FALSE);
+      mix.pars <- MCECMresult$mix.pars;
+      conv <- MCECMresult$conv;
+      conv.type <- MCECMresult$convtype;
+      ll.old <- ll;
+
+      ll <- sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE));
+      closeness <- abs((ll-ll.old)/ll.old);
+    } #end while
+    lambda <- mix.pars[1];
+    chi <- mix.pars[2];
+    psi <- mix.pars[3];
+    mult <- det(Sigma)^(-1/d);
+    Sigma <- Sigma*mult;
+    chi <- chi/mult;
+    psi <- psi*mult;
+    gamma <- gamma*mult;
+    mix.pars <- c(lambda,chi,psi);
+    names(mix.pars) <- c("lambda","chi","psi");
+    EW <- EGIG(lambda,chi,psi);
+    EW2 <- EGIG(lambda,chi,psi,2);
+    varW <- EW2-EW^2;
+    beta <- as.vector(solve(Sigma) %*% gamma);
+    mean <- as.numeric(mu+EW*gamma);
+    covariance <- EW*Sigma + varW*outer(gamma,gamma);
     if (d >1)
       cor <- CovToCor(Sigma)
-    else cor <- 1
-    delta <- as.numeric(sqrt(chi))
-    alpha <- as.numeric(sqrt(psi+ t(beta) %*% Sigma %*% beta))
-    alt.pars <- list(beta=beta,alpha=alpha,delta=delta)
-    list(mix.pars=mix.pars, mu = mu, Sigma=Sigma, gamma=gamma, ll.max=ll,alt.pars=alt.pars,mean=mean,covariance=covariance,correlation=cor)
-  }
-
+    else cor <- 1;
+    delta <- as.numeric(sqrt(chi));
+    alpha <- as.numeric(sqrt(psi+ t(beta) %*% Sigma %*% beta));
+    alt.pars <- list(beta=beta,alpha=alpha,delta=delta);
+    list(mix.pars=mix.pars, mu = mu, Sigma=Sigma, gamma=gamma, ll.max=ll,alt.pars=alt.pars,mean=mean,covariance=covariance,correlation=cor);
+}
 #######################################################################################
 
     MCECM.Qfunc <- function(lambda,chi,psi,delta,eta,xi){
@@ -581,8 +578,8 @@ fit.mNH <- function(data=data.hyp.5d,symmetric=FALSE,case="NIG",kvalue=NA,nit=20
     }
 
     #############################################################################
-
-
+#Note that kvalue is used only if scaling=TRUE so you can pass the default (i.e.
+#omit the parameter if you are NOT scaling.
   EMupdate <- function(data,mix.pars,mu,Sigma,gamma,symmetric,scaling=TRUE,kvalue=1)
   {
     d <- dim(data)[2]
@@ -619,29 +616,30 @@ fit.mNH <- function(data=data.hyp.5d,symmetric=FALSE,case="NIG",kvalue=NA,nit=20
   }
 
 ###################################################################
-
 MCECMupdate <- function(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=FALSE)
 {
-  d <- dim(data)[2]
-  n <- dim(data)[1]
-  lambda <- mix.pars[1]
-  chi <- mix.pars[2]
-  psi <- mix.pars[3]
-  Q <- mahalanobis(data,mu,Sigma)
-  Offset <- t(gamma) %*% solve(Sigma) %*% gamma
-  delta <- EGIG(d/2-lambda,psi+Offset,Q+chi)
-  eta <- EGIG(lambda-d/2,Q+chi,psi+Offset)
-  xi <- 0
-  if (xieval) xi <- ElogGIG(lambda-d/2,Q+chi,psi+Offset)
+  d <- dim(data)[2];
+  n <- dim(data)[1];
+  lambda <- mix.pars[1];
+  chi <- mix.pars[2];
+  psi <- mix.pars[3];
+  Q <- mahalanobis(data,mu,Sigma);
+  Offset <- t(gamma) %*% solve(Sigma) %*% gamma;
+  delta <- EGIG(d/2-lambda,psi+Offset,Q+chi);
+  eta <- EGIG(lambda-d/2,Q+chi,psi+Offset);
+  xi <- 0;
+  if (xieval) xi <- ElogGIG(lambda-d/2,Q+chi,psi+Offset);
   #record the value of the initial 2nd parameter input into another variable
-  thepars <- mix.pars[optpars]
+  thepars <- mix.pars[optpars];
 
-  #SU: 06/06/2006. The following are attempts to setup "global" variables in S-Plus.
-  #The values frame = 1 must be replaced by env=parent.frame() or by env=.GlobalEnv in R.
-  #assign("mix.pars.nl",mix.pars,frame=1)
-  #assign("greek.stats",list(delta=delta,eta=eta,xi=xi),frame=1)
-  assign("mix.pars.nl",mix.pars,env = .GlobalEnv)  #env= parent.frame())
-  assign("greek.stats",list(delta=delta,eta=eta,xi=xi), env = .GlobalEnv)  #env= parent.frame())
+  #11/1/2007: replace assign() statements by building parameters to pass to optim().  These represent
+  #the extra parameters to be sent to optfunc() via optim():
+  #We will send mix.pars vector as mixparams since fit.mst() and fit.mNH() use different
+  #values from the vector.  E.g. mixparam.nl <- mix.pars[3] would be used by fit.mst() but
+  #mix.pars[1] would be used by fit.mNH().
+  #mixparam.nl < mix.pars[3];  
+  #Build the "greeks" parameter:
+  greek.stats <- list(delta=delta, eta=eta, xi=xi); 
 
   #SU: 06/07/2006. Trying to replace all S-Plus nlmin(f,x) calls by calls to R-function nlm(f,p)fails.
   # Use optim() instead.  The following are the commented-out S-Plus lines.
@@ -650,7 +648,13 @@ MCECMupdate <- function(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=FALS
   #list(mix.pars=mix.pars,conv=tmp$converged,convtype=tmp$conv.type)
 
   #These are the replacement R-language lines (optfunc is an input function name):
-  optimout <- optim(thepars,optfunc,method="BFGS")
+  #We have ADDED parameters "mixparam" and "greeks" to optfunc() along with "thepars"
+  #which are the original parameters to optimize over.  Hence we must add these new
+  #parameters to the list passed to optim():
+  #*******************************
+  optimout <- optim(par=thepars,fn=optfunc,gr=NULL,mixparams=mix.pars, greeks=greek.stats, method="BFGS");
+  #****************************************
+
   mix.pars[optpars] <- optimout$par
   if(optimout$convergence == 0)
   {
@@ -662,28 +666,13 @@ MCECMupdate <- function(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=FALS
     conv = FALSE 
     convtype = "Convergence failed via BFGS quasi-Newton method"
   }
-  #SU: 7/18/2006: removed 'assign()'ed 
-  #fit.mst() and fit.mNH() both contain an internal function 'optfunc()' which in turn calls MCECM.Qfunc()
-  #whose parameters include 'greek.stats' and 'mix.pars.nl'.  fit.mst() and fit.mNH() both call the
-  #function MCECMupdate()which 'assign()'s both 'greek.stats' and 'mix.pars.nl' as global variables. MCECMupdate()
-  #then calls-back into optfunc() (within fit.mst() or fit.mNH()) which in turn calls MCECM.Qfunc() with the parameters 
-  #'greek.stats' and 'mix.pars.nl'. MCECM.Qfunc() then returns its result to optfunc() which returns its result
-  #to fit.mst() or fit.mNH().  
-  #Since both fit.mst() and fit.mNH() call MCECMupdate() which implicitly calls-back into optfunc(), we CAN remove 
-  #'assign()'ed variables from MCECMupdate() at its conclusion.
-  if(!is.null(mix.pars.nl))
-     rm(mix.pars.nl, envir = .GlobalEnv)
-  if(!is.null(greek.stats))
-     rm(greek.stats, envir = .GlobalEnv)
   #SU: conv.type is a character string return from nlmin() in S-Plus.  It is replaced by
   # conv in R-language
   list(mix.pars=mix.pars,conv,convtype)
-
-  }
+}
 
 
 ###################################
-
 EGIG <- function(lambda,chi,psi,k=1){
   if ((chi[1]>0) & (psi[1]>0)){
     term1 <- k*log(chi/psi)/2
@@ -761,59 +750,83 @@ psifunc <- function(x = 2,logvalue=FALSE)
 
 #########################################################################
 #Fit data to multivariate student t distribution.  See descriptions pp. 81-85 QRM
-fit.mst <- function(data=data.t.5d,nit=2000,tol=1e-10)
-  {
-    if (is.matrix(data)==FALSE) data <- as.matrix(data)
-    mix.pars <- c(-4,8,0)
-    optpars <- c(2)
-    optfunc <- function(thepar){
-      MCECM.Qfunc(-thepar/2,thepar,mix.pars.nl[3],greek.stats[[1]],greek.stats[[2]],greek.stats[[3]])
+#There is no class data.t.5d data set so the first parameter should NOT
+#be set to default as data=data.t.5d:
+#nit is number of iterations to try
+fit.mst <- function(data,nit=2000,tol=1e-10)
+{
+    if (is.matrix(data)==FALSE) data <- as.matrix(data);
+    mix.pars <- c(-4,8,0);
+    optpars <- c(2);
+
+    #optfunc() will be passed to MCECMupdate() below as an argument to be passed to optim().  
+    #11/1/2007: added two additional parameters: "mixparams" will be vector mix.pars[]and
+    #"greeks" will be a list holding delta (vector), eta (vector), xi (scalar) respectively.
+    #These parameters will be set (rather than globally assign()ed in MCECMupdate()prior to 
+    #its call to optim() where it passes optfunc() and the extra parameters defined in this 
+    #new version of optfunc()
+    #optfunc <- function(thepars, mixparam, greeks)
+    optfunc <- function(thepars, mixparams, greeks)
+    {
+      #fit.mst() uses mixparams[3] whereas fit.mNH() uses mixparams[1]:
+      #parameters in order to Qfunc() interpreted as lambda,chi,psi,delta,eta,xi:
+      if(!is.list(greeks)) stop("greeks must be a list");
+      if(!is.vector(mixparams)) stop("mixparams argument to optfunc() must be vector");
+      MCECM.Qfunc(-thepars/2,thepars,mixparams[3],greeks[[1]],greeks[[2]],greeks[[3]]);
+
     }
-    n <- dim(data)[1]
-    d <- dim(data)[2]
-    Xbar <- apply(data,2,mean)
-    mu <- Xbar
-    Sigma <- var(data)
-    gamma <- rep(0,d)
-    i <- 0
-    ll <-  sum(dmt(data,mix.pars[2],mu,Sigma,logvalue=TRUE))
-    #ll <- sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE))
-    closeness <- 100
-    while ((closeness > tol) & (i < nit)){
-      i <- i+1
-      EMresult <- EMupdate(data,mix.pars,mu,Sigma,gamma,symmetric=TRUE,scaling=FALSE,kvalue)
-      mu <- EMresult$mu
-      Sigma <- EMresult$Sigma
-      gamma <- EMresult$gamma
-      MCECMresult <- MCECMupdate(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=TRUE)
-      mix.pars <- MCECMresult$mix.pars
-      mix.pars[1] <- -mix.pars[2]/2
-      conv <- MCECMresult$conv
-      conv.type <- MCECMresult$convtype
-      ll.old <- ll
-      ll <-  sum(dmt(data,mix.pars[2],mu,Sigma,logvalue=TRUE))
-      #ll <- sum(dmghyp(data,mix.pars[1],mix.pars[2],mix.pars[3],mu,Sigma,gamma,logvalue=TRUE))
-      closeness <- abs((ll-ll.old)/ll.old)
-      #SU: 07/27/2006: suppressed messages about convergence in next two lines:
-      #message <- paste("It",i,conv,"Closeness",signif(closeness,3),"; L-Likelihood",signif(ll,10),"; 
-      #mix-pars",round(mix.pars[1],2),round(mix.pars[2],2),round(mix.pars[3],2),conv.type)
-      #print(message)
-        }
-    lambda <- mix.pars[1]
-    chi <- mix.pars[2]
-    psi <- mix.pars[3]
-    EW <- EGIG(lambda,chi,psi)
-    EW2 <- EGIG(lambda,chi,psi,2)
-    varW <- EW2-EW^2
-    Sigma <- symmetrize(Sigma)
-    beta <- as.vector(solve(Sigma) %*% gamma)
-    mean <- as.numeric(mu+EW*gamma)
-    covariance <- EW*Sigma + varW*outer(gamma,gamma)
+    #Old Version now supplanted: 
+    #optfunc <- function(thepar)
+    #{
+    #  MCECM.Qfunc(-thepar/2,thepar,mix.pars.nl[3],greek.stats[[1]],greek.stats[[2]],greek.stats[[3]])
+    #}
+    
+    n <- dim(data)[1];
+    d <- dim(data)[2];
+    Xbar <- apply(data,2,mean);
+    mu <- Xbar;
+    Sigma <- var(data);
+    gamma <- rep(0,d);
+    i <- 0;
+    #Use multivariate t distribution to sum the densities across data observations: 
+    ll <-  sum(dmt(data,mix.pars[2],mu,Sigma,logvalue=TRUE));
+    closeness <- 100;
+    while ((closeness > tol) & (i < nit))
+    {
+      i <- i+1;
+      #11/6/2007 SU: since you are not scaling in EMupdate, the kvalue is irrelevant and may be ignored,
+      #i.e. don't pass anything and let the function set it to a default of 1:
+      EMresult <- EMupdate(data,mix.pars,mu,Sigma,gamma,symmetric=TRUE,scaling=FALSE);  #,kvalue);
+      mu <- EMresult$mu;
+      Sigma <- EMresult$Sigma;
+      gamma <- EMresult$gamma;
+      #***************************************      
+      MCECMresult <- MCECMupdate(data,mix.pars,mu,Sigma,gamma,optpars,optfunc,xieval=TRUE);
+      #******************************************
+
+      mix.pars <- MCECMresult$mix.pars;
+      mix.pars[1] <- -mix.pars[2]/2;
+      conv <- MCECMresult$conv;
+      conv.type <- MCECMresult$convtype;
+      ll.old <- ll;
+      ll <-  sum(dmt(data,mix.pars[2],mu,Sigma,logvalue=TRUE));
+      closeness <- abs((ll-ll.old)/ll.old);
+    }  #end while
+    lambda <- mix.pars[1];
+    chi <- mix.pars[2];
+    psi <- mix.pars[3];
+    EW <- EGIG(lambda,chi,psi);
+    EW2 <- EGIG(lambda,chi,psi,2);
+    varW <- EW2-EW^2;
+    Sigma <- symmetrize(Sigma);
+    beta <- as.vector(solve(Sigma) %*% gamma);
+    mean <- as.numeric(mu+EW*gamma);
+    covariance <- EW*Sigma + varW*outer(gamma,gamma);
     if (d >1)
       cor <- CovToCor(Sigma)
-    else cor <- 1
-    nu <- chi
-    list(nu=nu, mu = mu, Sigma=Sigma, gamma=gamma,ll.max=ll,mean=mean,covariance=covariance,correlation=cor)
-  }
+    else cor <- 1;
+    nu <- chi;
+    list(nu=nu, mu = mu, Sigma=Sigma, gamma=gamma,ll.max=ll,mean=mean,covariance=covariance,correlation=cor);
+}
 
 #######################################################################################

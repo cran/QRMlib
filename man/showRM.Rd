@@ -47,7 +47,7 @@ see pages 282-284 in QRM
 \dontrun{
 data(danish);
 #Fit the GPD using MLE a
-mod <- fit.GPD(danish,10); 
+mod <- fit.GPD(danish,threshold=10); 
 showRM(mod,0.99,RM="VaR");
 showRM(mod,0.99,RM="ES");
 showRM(mod,0.995,RM="VaR");

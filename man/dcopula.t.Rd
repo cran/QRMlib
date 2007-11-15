@@ -37,19 +37,9 @@ see pages 197 and 235 of QRM
    \code{\link{dcopula.gauss}}
 }
 \examples{
-\dontrun{
 ll <- c(0.01,0.99);
 #create perspective plot for bivariate density:
 BiDensPlot(func=dcopula.t,xpts=ll,ypts=ll,nu=4,P=equicorr(2,0.5));
-#define an internal function:
-normal.metat <- function(x,nu,P)
-{
-  exp(dcopula.t(apply(x,2,pnorm),nu,P,logvalue=TRUE) + 
-  apply(log(apply(x,2,dnorm)),1,sum));
-}
-#use function to create perspective plot for bivariate density: 
-BiDensPlot(normal.metat,xpts=ll,ypts=ll,npts=80,nu=4,P=equicorr(2,0.71));
-}
 }
 \keyword{distribution}
 

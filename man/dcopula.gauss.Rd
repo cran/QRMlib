@@ -34,11 +34,9 @@ see pages 197 and 234 in QRM
    \code{\link{dcopula.gumbel}}
 }
 \examples{
-\dontrun{
 ll <- c(0.01,0.99);
 #create perspective plot for bivariate density:
 BiDensPlot(func=dcopula.gauss,xpts=ll,ypts=ll,P=equicorr(2,0.5));
-}
 }
 \keyword{distribution}
 

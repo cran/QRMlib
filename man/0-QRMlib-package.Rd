@@ -9,20 +9,21 @@ for those users without access to S-Plus.
 \description{
 This is a free R-language translation of the S-Plus library (QRMlib) designed to accompany the book 
 \emph{Quantitative Risk Management: Concepts, Techniques and Tools}  by Alexander  J. McNeil, 
-Rüdiger Frey and Paul Embrechts. It was built by Scott Ulman \email{scottulman@hotmail.com}.
+Rudiger Frey and Paul Embrechts. It was built by Scott Ulman \email{scottulman@hotmail.com}.
 A separate S-Plus version of the library can be downloaded from Alexander McNeil's URL.
 }
 \details{
 \tabular{ll}{
 Package: \tab QRMlib\cr
 Type: \tab Package\cr
-Version: \tab 1.4\cr
-Date: \tab 2007-04-08\cr
-Depends: \tab R(>= 2.4.1),fCalendar,methods,fEcofin, mvtnorm, chron,its,Hmisc\cr
+Version: \tab 1.4.2\cr
+Date: \tab 2007-11-15\cr
+Depends: \tab R(>= 2.6.0), methods, fSeries, mvtnorm, chron\cr
+Suggests: its,Hmisc
 License: \tab GPL version 2 or newer\cr
-URL: \tab http://www.math.etzh.ch/~mcneil/book/qrmlib.html\cr
-Packaged: \tab April 8, 2007\cr
-Built: \tab R 2.4.1; i386-pc-mingw32; 2007-04-08 12:00:00; windows\cr
+URL: \tab http://www.ma.hw.ac.uk/\eqn{\sim}{~}mcneil/book/index.html\cr
+Packaged: \tab November 15, 2007\cr
+Built: \tab R 2.6.0; i386-pc-mingw32; 2007-10-10 12:00:00; windows\cr
 }
 The package provides an entire library of methods to investigate concepts associated
 with QRM, including Market Risk, Credit Risk, and Operational Risk, as developed
@@ -37,13 +38,18 @@ nasdaq, nikkei, smi, sp500, xdax} are all S-Plus \sQuote{timeSeries} object file
 
 Unfortunately, R-language has several different time-series classes, none of which coincides
 with the S-Plus version.  The R-Metrics' class  \sQuote{timeSeries} (contained in library 
-fCalendar) is the closest to an S-Plus timeSeries.  
+fSeries) is the closest to an S-Plus timeSeries. RMetrics makes frequent significant changes
+in their timeSeries class.  In fact, with R-2.6.0, RMetrics moved timeSeries from the fCalendar  
+package to the fSeries package and made substantial changes.  This of course caused necessary
+rewrites in QRMlib.   
 
-Hence data files built in this R-language translation are all R-Metrics \sQuote{timeSeries}
-types.  This means you must load the fCalendar library in order to use the R-data files.  
-The setup program should require automatic loading of fCalendar when you open QRMlib. 
+Although data files built in this R-language translation still use R-Metrics \sQuote{timeSeries}
+types, I am now including another set of datasets built as dataframes which you may try to use
+in your analyses.  All data files are stored in the data subfolder of QRMlib.  The timeSeries
+file types end with the extension .rda while the dataframe types end with the extension .df.R. 
+See the section \emph{storeDataInWorkspace} for further details about the files.
 
-To automatically load the QRMlib package (and the fCalendar package), see 
+To automatically load the QRMlib package, see 
 \code{\link{profileLoadLibrary}}\cr
 To automatically load the data files and save them in the current workspace, see
 \code{\link{storeDataInWorkspace}}
@@ -54,11 +60,12 @@ S-Plus Original by Alexander McNeil; R-language port by Scott Ulman\cr
 Maintainer: Scott Ulman <scottulman@hotmail.com> for R-language version
 }
 \references{
-\emph{Quantitative Risk Management: Concepts, Techniques and Tools}  by Alexander  J. McNeil, Rüdiger Frey and Paul Embrechts\cr
+\emph{Quantitative Risk Management: Concepts, Techniques and Tools}  by Alexander  J. McNeil, Rudiger Frey and Paul Embrechts\cr
 Princeton Press, 2005
 }
 \seealso{
-\code{\link{QRMBook-workspace}} and \code{\link{storeDataInWorkspace}} and 
+\code{\link{QRMBook-workspace}},
+\code{\link{storeDataInWorkspace}},  
 \code{\link{profileLoadLibrary}}
 }
 \keyword{ package }

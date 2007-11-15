@@ -1,5 +1,6 @@
-# S-Plus script developed by Professor Alexander McNeil, mcneil@math.ethz.ch
+# S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
+# QRMlib 1.4.2
 # This free script using QRMLib is distributed in the hope that it will be useful, 
 # but WITHOUT ANY WARRANTY; without even the implied warranty of 
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
@@ -7,15 +8,21 @@
 
 ######Load the QRMlib and danish and DJ data sets##################
 #QRMlib.pdf is a help file for the functions used by QRMlib.  It is available at
-#...\Program Files\R\R-2.2.1\library\QRMlib\Docs
+#...\Program Files\R\R-2.6.0\library\QRMlib\Docs
 #If you have created the QRMBook workspace and .Rprofile  as described in QRMlib.pdf
 #topics 'QRMBook-workspace' and 'profileLoadLibrary', then you may comment out the
 #following line:
 library(QRMlib);
-#if you have previously opened the danish fire loss data set  and DJ (Dow Jones) data sets AND saved 
-#the workspace, you may comment out the following lines:
+
+#if you have previously opened the danish (fire loss) and DJ (Dow Jones 30 stocks)
+# timeSerie AND aved the workspace, you may comment out the following lines:
 data(danish);
 data(DJ);
+#Alternatively, if you want to load the dataframes instead of timeSeries,
+#activate the following lines:
+#data(danish.df)
+#data(DJ.df);
+
 #################################################
 
 
@@ -24,8 +31,7 @@ data(DJ);
 #Losses are expressed in units of 1,000,000 Kroner so they are already over a high threshold.
 #However, we will set a still higher threshold
 plot(danish, main="Danish fire losses 1980-1990", ylab="Losses in Millions of Kroner",type="l");
-#Alternatively, use
-#plot.timeSeriesIts(danish, main="Danish fire losses 1980-1990", ylab="Losses in Millions of Kroner");
+grid(); #add gridlines to plot
 
 #See why threshold set to 10 in fit.GPD()? Slight kink below value of 10 (million kroner)?
 MEplot(danish, main="Mean Excess Plot (MEP) Danish Fire Losses 1980-1990");
@@ -46,7 +52,8 @@ losses <- seriesData(danish);
 # 'labels': whether or not axes should be labelled 
 # 'table': should a table of results be printed?
 #For every model "fit.GPD" is called. Evaluation may be slow:
-xiplot(danish, models=5, start= 25, end = 200, reverse=T, ci=0.95,auto.scale=T,labels=T,table=T);
+xiplot(danish, models=5, start= 25, end = 200, reverse=TRUE, 
+  ci=0.95,auto.scale=TRUE,labels=TRUE,table=TRUE);
 
 #SU: Run hillPlot to show what happens with the Hill Plot.  See Example 7.27, p. 287 in QRM
 hillPlot(danish, option = "alpha", start = 5, end = 250, p = 0.99);
@@ -90,8 +97,7 @@ xiplot(danish);
 DJreturns <- mk.returns(DJ);
 MSFT <- DJreturns[,"MSFT"];
 plot(MSFT,type="l");
-#Alternatively, use
-#plot.timeSeriesIts(MSFT);
+grid(); #add gridlines to plot
 
 nreturns <- -seriesData(MSFT);
 MEplot(nreturns[nreturns>0]);
@@ -103,7 +109,7 @@ showRM(mod2,0.995,RM="ES");
 
 # Simulated t example
 #Use data.dump() in S-Plus to get the S-Plus simulated data here
-#data.restore("tsimuldata.dump", print=T)
+#data.restore("tsimuldata.dump", print=TRUE)
 #tsimuldata <- data.matrix(tsimuldata.df)
 #Alternatively, simulate data via rt() here in R. 
 tsimuldata <- rt(1000, df = 3)
@@ -123,8 +129,13 @@ abline(v = qt(0.995,3))
 #3 days, so we'll discard those and start at 1-6-1991.  This gives us exactly 521
 #weeks of data as reported in QRM, p. 281, Example 7.24 (AT&T weekly loss data)
 Ret.DJ <- mk.returns(DJ);
-#In version 240.10068, fCalendar uses cut() rather than cutSeries() to select a subset from timeseries:
-DJ30dailyTSFull <- cut(Ret.DJ, from="1991-01-06", to="2000-12-31");
+#Through R-2.5.1, timeSeries class originally belong in package fCalendar. 
+#Version 221.10065 used cutSeries()method to select data only between the 'to' and 'from' dates. 
+#Version 240.10068 used cut(). Both required the day PRIOR to desired start in "from".
+#R-2.6.0. RMetrics 260.72 moved timeSeries to fSeries from fCalendar. Used window() in place of cut().
+#No longer need prior date:
+DJ30dailyTSFull <- cut(Ret.DJ, from="1991-01-07", to="2000-12-31");
+
 #Call our function to aggregate daily returns to weekly returns for all DJ stocks:
 DJ30weeklyTSFull <- aggregateWeeklySeries(DJ30dailyTSFull);
 #Extract the AT&T timeSeries log returns from 1993-2000 log returns for all DJ stocks:
@@ -139,8 +150,8 @@ attWeeklyLossesTSFull@Data <- 100.0*(1.0 - exp(seriesData(attWeeklyTSFull)));
 length(attWeeklyLossesTSFull@positions); #give length of extracted timeSeries
 #Plot the percentage losses.  See figure 7.5a on p. 282.
 plot(attWeeklyLossesTSFull,main="ATT Weekly Loss Percentages", ylab="Losses in %",type="l");
-#Alternatively, use:
-#plot.timeSeriesIts(attWeeklyLossesTSFull,main="ATT Weekly Loss Percentages", ylab="Losses in %");
+grid(); #add gridlines to plot
+
 #Build a Mean Excess Plot.  See figure 7.5b on p. 282.
 MEplot(attWeeklyLossesTSFull@Data[attWeeklyLossesTSFull@Data > 0]);
 #Choose the threshold at 2.75 from the kink in the previous MEPlot(). Create Figure 7.5c on p. 282

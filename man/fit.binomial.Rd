@@ -27,12 +27,10 @@ list containing parameter estimates and details of fit
 }
 
 \examples{
-\dontrun{
-spdata.raw; 
+data(spdata.raw); 
 attach(spdata.raw); 
 BdefaultRate <- Bdefaults/Bobligors; 
 mod0 <- fit.binomial(Bdefaults, Bobligors); 
-}
 }
 \keyword{methods}
 

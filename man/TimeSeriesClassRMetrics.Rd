@@ -43,8 +43,8 @@ Objects are:
 \tabular{ll}{
 \sQuote{applySeries()} \tab Applies a function to margins of a \sQuote{timeSeries},\cr  
 \sQuote{alignDailySeries()} \tab Aligns a daily \sQuote{timeSeries} to new positions,\cr  
-\sQuote{cut()} \tab Cuts out a piece from a \sQuote{timeSeries} object,\cr  
-\sQuote{mergeSeries()} \tab Merges a \sQuote{timeSeries} object with a \sQuote{matrix},\cr  
+\sQuote{window()} \tab Selects a piece from a \sQuote{timeSeries} object,\cr  
+\sQuote{merge()} \tab Merges a \sQuote{timeSeries} object with a \sQuote{matrix},\cr  
 \sQuote{ohlcDailyPlot()} \tab Plots open high low close bar chart,\cr  
 \sQuote{revSeries()} \tab Reverts the order of \sQuote{timeSeries} object,\cr  
 \sQuote{diffSeries()} \tab Takes differences from a \sQuote{timeSeries} object,\cr  
@@ -86,11 +86,11 @@ as.matrix(x)\cr
 as.data.frame(x, row.names = NULL, optional = NULL)\cr
 
 applySeries(x, from = NULL, to = NULL, by=c("monthly","quarterly"), FUN = colAvgs, units = NULL, ...);\cr 
-cut(x, from, to);\cr
+window(x, from, to);\cr
 diffSeries(x, lag = 1, diff = 1, trim = FALSE, pad = NA);\cr
 lagSeries(x, k = 1, trim = FALSE, units = NULL);\cr
 outlierSeries(x, sd = 10, complement = TRUE);\cr
-mergeSeries(x, y, units = NULL);\cr
+merge(x, y, units = NULL);\cr
 returnSeries(x, type = c("continuous", "discrete"), percentage = FALSE, 
     trim = TRUE, digits = 4, units = NULL);\cr
 revSeries(x);\cr

@@ -1,4 +1,4 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
 # Copyright (C) 2005-06 Alexander McNeil 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch */
+# Contact: Alexander J. McNeil:  A.J.McNeil@hw.ac.uk
 # R-language contact: Scott Ulman : scottulman@hotmail.com
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 

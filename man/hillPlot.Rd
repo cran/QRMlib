@@ -41,13 +41,11 @@ graphical parameters may be entered}
 }
 
 \examples{
-\dontrun{
 data(danish);
 #Run hillPlot to show what happens with the Hill Plot.  
 #See Example 7.27, p. 287 in QRM
 hillPlot(danish, option = "alpha", start = 5, end = 250, p = 0.99);
 hillPlot(danish, option = "alpha", start = 5, end = 60, p = 0.99);
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{hplot}

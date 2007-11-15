@@ -8,7 +8,6 @@
 \usage{
 fit.sePP(PP, model = "Hawkes", mark.influence = TRUE, std.errs = FALSE)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{PP}{a point process object of class PP (unmarked) or MPP (marked)}
   \item{model}{(optional)name of self-exciting model: Hawkes or ETAS}
@@ -36,10 +35,5 @@ window <- (seriesPositions(sp500.nreturns) >
 sp500.nreturns <- sp500.nreturns[window]; 
 tmp <- extremalPP(sp500.nreturns,ne=100); 
 mod2a <- fit.sePP(tmp,mark.influence=FALSE,std.errs=TRUE); 
-\dontrun{
-mod2b <- fit.sePP(tmp,mark.influence=TRUE,std.errs=TRUE); 
-mod2c <- fit.sePP(tmp,model="ETAS",mark.influence=FALSE,std.errs=TRUE); 
-mod2d <- fit.sePP(tmp,model="ETAS",mark.influence=TRUE,std.errs=TRUE); 
-}
 }
 \keyword{methods}

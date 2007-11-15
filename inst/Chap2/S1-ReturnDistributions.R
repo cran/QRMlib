@@ -1,5 +1,6 @@
-# S-Plus script developed by Professor Alexander McNeil, mcneil@math.ethz.ch
+# S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
+# QRMlib 1.4.2
 # This free script using QRMLib is distributed in the hope that it will be useful, 
 # but WITHOUT ANY WARRANTY; without even the implied warranty of 
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
@@ -7,14 +8,17 @@
 
 ######Load the QRMlib and DJ data set##################
 #QRMlib.pdf is a help file for the functions used by QRMlib.  It is available at
-#...\Program Files\R\R-2.2.1\library\QRMlib\Docs
+#...\Program Files\R\R-2.6.0\library\QRMlib\Docs
 #If you have created the QRMBook workspace and .Rprofile  as described in QRMlib.pdf
 #topics 'QRMBook-workspace' and 'profileLoadLibrary', then you may comment out the
 #following line:
 library(QRMlib);
-#if you have previously opened the DJ data set (the Dow Jones for 30 stocks) AND saved 
-#the workspace, you may comment out the following line:
+#if you have previously opened the DJ timeSeries (the Dow Jones for 30 stocks) AND 
+#saved the workspace, you may comment out the following line:
 data(DJ);
+#Alternatively, if you want to load the dataframe instead of timeSeries,
+#activate the following line:
+#data(DJ.df);
 #################################################
 
 # EXPLORING RETURN DISTRIBUTIONS
@@ -29,24 +33,25 @@ out <- fit.st(data.st)
 
 #Generate random data from generalized hyperbolic distributions (NIG requires lambda = -0.5)
 data.NIG <- rghyp(n,lambda=-0.5,chi=2,psi=2,mu=0,gamma=0)
-out <- fit.NH(data.NIG,symmetric=T,se=T)
+out <- fit.NH(data.NIG,symmetric=TRUE,se=TRUE)
 
 data.NIG <- rghyp(n,lambda=-0.5,chi=2,psi=2,mu=0.5,gamma=0.3)
-out <- fit.NH(data.NIG,se=T,symmetric=F)
+out <- fit.NH(data.NIG,se=TRUE,symmetric=FALSE)
 
 data.hyp <- rghyp(n,lambda=1,chi=2,psi=2,mu=0,gamma=0)
-out <- fit.NH(data.hyp,case="hyp",symmetric=T,se=T)
+out <- fit.NH(data.hyp,case="hyp",symmetric=TRUE,se=TRUE)
 
 data.hyp <- rghyp(n,lambda=1,chi=2,psi=2,mu=0.5,gamma=0.3)
-out <- fit.NH(data.hyp,case="hyp",se=T,symmetric=F)
+out <- fit.NH(data.hyp,case="hyp",se=TRUE,symmetric=FALSE)
 
 # Working in R.  
 #Make returns from timeSeries (the default is log-returns). Ret.DJ is a timeSeries class.
-Ret.DJ <- mk.returns(DJ)
-#In R, cutSeries() method works by selecting data only between the 'to' and 'from' dates. Hence 
-#we will use the remaining (cut) data from 1993-01-01 to 2000-12-31. MUST use PRIOR DAY on 'from' 
-#In version 240.10068, fCalendar uses cut() rather than cutSeries() to select a subset from timeseries:
-DJ30dailyTS <- cut(Ret.DJ, from="1992-12-31", to="2000-12-31");
+Ret.DJ <- mk.returns(DJ);
+
+#R-2.6.0. RMetrics 260.72 moved timeSeries to fSeries from fCalendar. Used window() in place of cut().
+#No longer need prior date as in 240.10068 used cut().
+DJ30dailyTS <- window(Ret.DJ, from="1993-01-01", to="2000-12-31");
+
 #We cannot use the R-function 'aggregate()' since it uses a 'ts' class rather than a 'timeSeries'
 #Hence call the new function aggregateWeeklySeries from functionsUtility.R
 DJ30weeklyTS <- aggregateWeeklySeries(DJ30dailyTS);
@@ -79,7 +84,7 @@ xvals <- seq(from=min(rseries),to=max(rseries),length=100)
 yvals.gauss <- dnorm(xvals,mean=mod.gauss$mu,sd=sqrt(mod.gauss$Sigma[1,1]))
 yvals.t <- dt((xvals-mod.t$par.ests[2])/mod.t$par.ests[3],df=mod.t$par.ests[1])/mod.t$par.ests[3]
 yvals.NIG <- dghyp(xvals,lambda=-1/2,chi=mod.NIG$par.ests[1],psi=mod.NIG$par.ests[2],mu=mod.NIG$par.ests[3],gamma=mod.NIG$par.ests[4])
-hist(rseries,nclass=30,prob=T,ylim=range(yvals.gauss,yvals.t,yvals.NIG), main="Histogram of MSFT")
+hist(rseries,nclass=30,prob=TRUE,ylim=range(yvals.gauss,yvals.t,yvals.NIG), main="Histogram of MSFT")
 lines(xvals,yvals.gauss,col=3)
 lines(xvals,yvals.t,col=4)
 lines(xvals,yvals.NIG,col=5)
@@ -141,7 +146,7 @@ xvals <- seq(from=min(rseries),to=max(rseries),length=100)
 yvals.gauss <- dnorm(xvals,mean=mod.gauss$mu,sd=sqrt(mod.gauss$Sigma[1,1]))
 yvals.t <- dt((xvals-mod.t$par.ests[2])/mod.t$par.ests[3],df=mod.t$par.ests[1])/mod.t$par.ests[3]
 yvals.NIG <- dghyp(xvals,lambda=-1/2,chi=mod.NIG$par.ests[1],psi=mod.NIG$par.ests[2],mu=mod.NIG$par.ests[3],gamma=mod.NIG$par.ests[4])
-hist(rseries,nclass=30,prob=T,ylim=range(yvals.gauss,yvals.t,yvals.NIG))
+hist(rseries,nclass=30,prob=TRUE,ylim=range(yvals.gauss,yvals.t,yvals.NIG))
 lines(xvals,yvals.gauss,col=3)
 lines(xvals,yvals.t,col=4)
 lines(xvals,yvals.NIG,col=5)

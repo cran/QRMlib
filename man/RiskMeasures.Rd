@@ -32,7 +32,7 @@ see pages 282-284 of QRM
 }
 \examples{
 data(danish);
-out <- fit.GPD(danish,10); 
+out <- fit.GPD(danish,threshold=10); 
 RiskMeasures(out,c(0.99,0.999)); 
 }
 \keyword{misc}

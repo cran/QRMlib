@@ -36,13 +36,6 @@ DJ30daily <- Ret.DJ[sample1,];
 DJ30daily <- 100*seriesData(DJ30daily); 
 rseries <- DJ30daily[,"MSFT"]; 
 mod.t <- fit.st(rseries); 
-\dontrun{
-mod.gauss <- fit.norm(rseries);
-c(mod.gauss$ll.max, mod.t$ll.max);
-mod.NIG <- fit.NH(rseries); 
-mod.hyp <- fit.NH(rseries,case="hyp"); 
-c(mod.NIG$ll.max, mod.hyp$ll.max); 
-}
 }
 \keyword{methods}
 

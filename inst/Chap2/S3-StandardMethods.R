@@ -1,5 +1,6 @@
-# S-Plus script developed by Professor Alexander McNeil, mcneil@math.ethz.ch
+# S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
+# QRMlib 1.4.2
 # This free script using QRMLib is distributed in the hope that it will be useful, 
 # but WITHOUT ANY WARRANTY; without even the implied warranty of 
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
@@ -7,14 +8,17 @@
 
 ######Load the QRMlib and DJ data set##################
 #QRMlib.pdf is a help file for the functions used by QRMlib.  It is available at
-#...\Program Files\R\R-2.2.1\library\QRMlib\Docs
+#...\Program Files\R\R-2.6.0\library\QRMlib\Docs
 #If you have created the QRMBook workspace and .Rprofile  as described in QRMlib.pdf
 #topics 'QRMBook-workspace' and 'profileLoadLibrary', then you may comment out the
 #following line:
 library(QRMlib);
-#if you have previously opened the DJ data set (the Dow Jones for 30 stocks) AND saved 
-#the workspace, you may comment out the following line:
+#if you have previously opened the DJ timeSeries (the Dow Jones for 30 stocks) AND 
+#saved the workspace, you may comment out the following line:
 data(DJ);
+#Alternatively, if you want to load the dataframe instead of timeSeries,
+#activate the following line:
+#data(DJ.df);
 #################################################
 
 
@@ -22,24 +26,27 @@ ILLUSTRATION OF STANDARD METHODS.  See section 2.3 in QRM book.
 
 # Get the risk factor Data (Z) in S-Plus
 #DJ is a time series for the 30 industrials.  It is included in the data of the QRMLib.
-#In R, fCalendar 221.10065 used the cutSeries() method to select data only between the 'to' 
-#and 'from' dates. Hence we will use the remaining (cut) data from 1992-12-30 to 2000-12-31. 
-#Remember, the 'from' date must be the DAY BEFORE you want to start. 
-#In version 240.10068, fCalendar used cut() rather than cutSeries() to select a subset from timeseries:
-Sdata <- cut(DJ, from="1992-12-30", to="2000-12-31");
+#Through R-2.5.1, timeSeries class originally belong in package fCalendar. 
+#Version 221.10065 used cutSeries()method to select data only between the 'to' and 'from' dates. 
+#Version 240.10068 used cut(). Both required the day PRIOR to desired start in "from".
+#Sdata <- cut(DJ, from="1992-12-30", to="2000-12-31");
+#R-2.6.0. RMetrics 260.72 moved timeSeries to fSeries from fCalendar. Used window() in place of cut().
+#No longer need prior date:
+Sdata <- window(DJ, from="1992-12-31", to="2000-12-31");
 #Indicate the companies whose data you want in the reduced timeSeries:
 tsSelections <- c("GE","INTC","KO","JNJ");
 Sdata <- Sdata[,tsSelections];
-#fCalendar 221.10065 used logSeries() to converts the data portion of a timeSeries to logs and 
-#preserve the dates. Beginning with fCalendar 240.10068, the method name was changed to log().
-# Zdata <- logSeries(Sdata);  #old fCalendar 221.10065 method
-Zdata <- log(Sdata); #new fCalendar 240.10068 method
+#fCalendar 221.10065 used logSeries(). fCalendar 240.10068 used log(). fSeries 260.72 uses log()
+Zdata <- log(Sdata); 
 
-#In fCalendar 221.10065, the following call or a call to plot.timeSeries(Zdata,ylab=..) worked.
-#Both calls now fail.
+#In fCalendar 221.10065 and R-2.2.1, plot.timeSeries() worked to plot multiple series on same graph.
 #plot(Zdata, ylab="log of timeSeries"); 
-#Instead, call the function 'plot.timeSeriesIts()' from functionUtility.R:
-plot.timeSeriesIts(Zdata, ylab="log of timeSeries");
+#Later versions no longer work with more than one column of data at a time.
+#Hence we now call a new utility function from functionsUtility.R replacing plot.timeSeries():
+#Plot all 4 columns on same graph (no need to use colvec parameter):
+plotMultiTS(Zdata, reference.grid=TRUE);
+#plot only columns 2 and 3 on the graph:
+plotMultiTS(Zdata, colvec= c(2,3),reference.grid=TRUE, format="%Y-%m");
 
 #Construct the risk factor returns (X)
 Xdata <- mk.returns(Sdata);
@@ -68,7 +75,7 @@ portweights <- (current.prices * alpha)/Value;
 portweights;
 
 # Construct a 'loss operator function'.
-loss.operator <- function(x,lop.weights,lop.value, linear=F)
+loss.operator <- function(x,lop.weights,lop.value, linear=FALSE)
   # parameter x should be a matrix or vector of returns (risk-factors)
   # parameter lop.weights should be a vector of weights to apply to return vector
   # parameter lop.value should be a scalar representing a portfolio value
@@ -81,12 +88,12 @@ loss.operator <- function(x,lop.weights,lop.value, linear=F)
   if (is.matrix(x))
     ndatarows <- dim(x)[1];
   #Build a weight-matrix.  Let each row contain weights for the nriskfactors (e.g.four returns from 4 stocks)
-  wtMatrix <- matrix(lop.weights,nrow=ndatarows,ncol=nriskfactors,byrow=T);
+  wtMatrix <- matrix(lop.weights,nrow=ndatarows,ncol=nriskfactors,byrow=TRUE);
   #Now multiply each element in the weight matrix by total portfolio value at start date. Hence each row of
   #tmpMatrix contains columns representing the starting individual risk factor values (e.g. four values for 4 stocks) 
   # Each row has currently identical values, the starting values for each individual risk factor
   tmp.matrix <- lop.value *wtMatrix;
-  # tmp.matrix <- lop.value*matrix(lop.weights,nrow=ndatarows,ncol=nriskfactors,byrow=T)
+  # tmp.matrix <- lop.value*matrix(lop.weights,nrow=ndatarows,ncol=nriskfactors,byrow=TRUE)
   #The default is nonlinear which means the function which calculated the return factor (e.g. mk.returns() used
   #a default log() (or some other nonlinear) transform.  Hence using exp(x) will reconvert the log() so the summand
   #will reflect actual changes in value  
@@ -103,7 +110,7 @@ loss.operator <- function(x,lop.weights,lop.value, linear=F)
 # Using this loss operator
 loss <- loss.operator(X,portweights,Value); #losses on all 4 stocks in X throughout 2020 sample days
 loss.operator(as.vector(X[1,]),portweights,Value); #losses on all 4 stocks in X on first day only
-loss.operator(as.vector(X[1,]),portweights,Value,linear=T); #losses on all 4 stocks in X on first day only--linearized
+loss.operator(as.vector(X[1,]),portweights,Value,linear=TRUE); #losses on all 4 stocks in X on first day only--linearized
 
 
 
@@ -140,7 +147,7 @@ VaR99.mc <- quantile(mcdata,0.99);
 ES99.mc <- mean(mcdata[mcdata > VaR99.mc]);
 
 #Draw pictures
-hist(hsdata,nclass=20,prob=T, xlab="HS data");
+hist(hsdata,nclass=20,prob=TRUE, xlab="HS data");
 title(main="HS Loss Distribution");
 abline(v=c(VaR99,ES99));
 abline(v=c(VaR99.hs,ES99.hs),col=2,lty=2);

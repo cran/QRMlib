@@ -30,10 +30,8 @@ to Frank's copula.
    \code{\link{rAC}}
 }
 \examples{
-\dontrun{
 #Pass the parameter values n=20 and theta=0.5
 result <- rFrankMix(20,0.5);
-}
 }
 \keyword{distribution}
 

@@ -20,8 +20,5 @@ vector of values of argument 2
 \value{
 vector of values of logarithm of beta function 
 }
-\seealso{
-  For other special functions, see \code{\link{Special}}
-}
 \keyword{math}
 

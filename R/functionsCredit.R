@@ -1,7 +1,7 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
-# Copyright (C) 2005-06 Alexander McNeil
+# Copyright (C) 2005-07 Alexander McNeil
 # R-language additions Copyright (C) 2006-2007 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch
+# Contact: Alexander J. McNeil:  a.j.mcneil@hw.ac.uk
 # R-language contact:  Scott Ulman: scottulman@hotmail.com
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 
@@ -101,14 +101,14 @@ cal.probitnorm <-function(pi1 = 0.1837, pi2 = 0.0413)
 }
 
 ########################################################
-#SU: switched notation so x passed as 1st argument rather than q which goes with pprobitnorm()
+#switched notation so x passed as 1st argument rather than q which goes with pprobitnorm()
 dprobitnorm <- function(x, mu, sigma)
 {
 	(dnorm((qnorm(x) - mu)/sigma))/(dnorm(qnorm(x)) * sigma)
 }
 
 ########################################################
-#SU: switched notation so x passed as 1st argument rather than q which goes with pclaytonmix()
+#switched notation so x passed as 1st argument rather than q which goes with pclaytonmix()
 dclaytonmix <- function(x, pi, theta)
 {
 	dgamma((( - log(x))/(pi^( - theta) - 1)), (1/theta))/(x * (pi^( - theta) - 1))
@@ -172,68 +172,69 @@ rbinomial.mixture <- function(n = 1000, m = 100, model = "probitnorm", ...)
 }
 
 #########################################################
-
-# Fits a binomial-beta distribution to data for a single group
+# Fits a binomial-beta distribution to data for a single group; e.g.
+#fits default and obligors to binomial distribution
 fit.binomialBeta <- function(M, m, startvals = c(2, 2), ses = FALSE)
 {
-	negloglik <- function(theta)
-	{
-          #SU: Use global R variables in place of S-Plus variables:
-	   #length(trials) * lbeta(theta[1]^2, theta[2]^2) - sum(lbeta(theta[1]^2 + y, theta[2]^2 + trials - y))
-          length(trials.fn) * lbeta(theta[1]^2, theta[2]^2) - sum(lbeta(theta[1]^2 + y.fn, theta[2]^2 + trials.fn - y.fn))
-	}
-       #SU: 07/24/2006. The following are attempts to setup "global" variables in S-Plus.
-	#assign("y", M, frame = 1.)
-	#assign("trials", m, frame = 1.)
-       #Here is the R-methodology:
-	assign("y.fn", M, env = .GlobalEnv)
-	assign("trials.fn", m, env = .GlobalEnv)
+#ARGUMENTS:
+#  M        vector of number of successes (defaults)
+#  m        vector of number of trials (obligors)-vector 
+#           M and M will have equal length which will probably be the number of 
+#           credit classes/ratings from a Ratings Agency
+# startvals starting point for parameter estimations
+# ses       Indicates whether standard errors should be calculated
 
-	theta <- sqrt(startvals)
-       #SU: 07/24/2006. Trying to replace all S-Plus nlmin(f,x) calls by calls to R-function nlm(f,p)fails.
-       # Use optim() instead.  The following are the commented-out S-Plus lines.
-	#out <- nlmin(negloglik, theta, max.fcal = 1000., max.iter = 200.)
-	#par.ests <- out$x
-       #These are the replacement R-language lines ('negloglik' is an input function name):
-       optimout <- optim(theta,negloglik,method="BFGS")
-       par.ests <- optimout$par
-       if(optimout$convergence == 0)
-       {
-          conv = TRUE
-          convtype = "Convergence succeeded via BFGS quasi-Newton method"
-       }
-       else
-       {
-         conv = FALSE 
-         convtype = "Convergence failed via BFGS quasi-Newton method"
-       }
+   #10/5/2007: added parameters 2-3 to function to replace assign()
+   negloglik <- function(theta, defaults, trials)
+   {
+     length(trials) * lbeta(theta[1]^2, theta[2]^2) - sum(lbeta(theta[1]^2 + defaults, 
+          theta[2]^2 + trials - defaults));
+   }
+   #10/5/2007: added parameters 2-3 to truenegloglik() to avoid assign(); 
+   truenegloglik <- function(theta, defaults, trials)
+   {
+      length(trials) * lbeta(theta[1], theta[2]) - sum(lbeta(theta[1] + 
+          defaults, theta[2] + trials - defaults));
+   }
+   #10/5/2007: removed assign() settings
+ 
+   theta <- sqrt(startvals);
+  
+   #10/5/2007: added parameters 2-3 to function to replace assign()
+   optimout <- optim(theta,negloglik, defaults=M, trials=m, method="BFGS");
+   par.ests <- optimout$par;
+   if(optimout$convergence == 0)
+   {
+      conv = TRUE;
+      convtype = "Convergence succeeded via BFGS quasi-Newton method";
+   }
+   else
+   {
+      conv = FALSE; 
+      convtype = "Convergence failed via BFGS quasi-Newton method";
+   }
 
-       loglik <-  - negloglik(par.ests)
-	par.ests <- par.ests^2
-	truenegloglik <- function(theta)
-	{
-          #SU: Use global R variables in place of S-Plus variables:
-          #length(trials) * lbeta(theta[1], theta[2]) - sum(lbeta(theta[1] + y, theta[2] + trials - y))
-          length(trials.fn) * lbeta(theta[1], theta[2]) - sum(lbeta(theta[1] + y.fn, theta[2] + trials.fn - y.fn))
-	}
-	if(ses) {
-		hessmatrix <- hessb(truenegloglik, par.ests)
-              varcov <- solve(hessmatrix)
-		par.ses <- sqrt(diag(varcov))
-	}
-	else par.ses <- rep(NA, 2)
-	pi <- par.ests[1]/sum(par.ests)
-	pi2 <- (par.ests[1] + 1)/(sum(par.ests) + 1) * pi
-	rhoY <- (pi2 - pi^2)/(pi - pi^2)
-       #SU: 07/24/2006 Remove 'assign()'ed R-language global variables:
-       if(!is.null(trials.fn))
-          rm(trials.fn, envir = .GlobalEnv)
-       if(!is.null(y.fn))
-          rm(y.fn, envir = .GlobalEnv)
-       #Substitute R-convergence values for S-Plus values:
-	#list(par.ests = par.ests, par.ses = par.ses, maxloglik = loglik, converged = out$converged, details = out$conv.type, pi = pi, pi2 = pi2,
-	#	rhoY = rhoY)
-       list(par.ests = par.ests, par.ses = par.ses, maxloglik = loglik, converged = conv, details = convtype, pi = pi, pi2 = pi2, rhoY = rhoY)
+   #10/5/2007: added parameters 2 and 3 which must be passed to negloglik()    
+   loglik <-  - negloglik(par.ests, defaults=M, trials=m);
+   par.ests <- par.ests^2;
+   
+	
+   if(ses) 
+   {
+      #10/5/2007: added new parameters 3-4 to hessb; they must both be passed to truenegloglik():
+      hessmatrix <- hessb(truenegloglik, par.ests, defaults=M, trials=m);
+      varcov <- solve(hessmatrix);
+      par.ses <- sqrt(diag(varcov));
+   }
+	
+   else par.ses <- rep(NA, 2);
+
+   pi <- par.ests[1]/sum(par.ests);
+   pi2 <- (par.ests[1] + 1)/(sum(par.ests) + 1) * pi;
+   rhoY <- (pi2 - pi^2)/(pi - pi^2);
+       
+  list(par.ests = par.ests, par.ses = par.ses, maxloglik = loglik, converged = conv, 
+       details = convtype, pi = pi, pi2 = pi2, rhoY = rhoY);
 }
 
 
@@ -247,43 +248,55 @@ fit.binomialBeta <- function(M, m, startvals = c(2, 2), ses = FALSE)
 fit.binomialProbitnorm <- function(M, m, startvals = c(-1, 0.5),lowerParamLimits = c(-3.0, 0.02),
   upperParamLimits = c(1,0.9))
 {
+   #ARGUMENTS:
+   #  M        vector of number of successes (defaults)
+   #  m        vector of number of trials (obligors)-vector 
    #probitnormal is the one-factor KMV/CreditMetrics model. Link function for probitnorm is the normal.
    #'link' is the name of a function to be passed via 'link.fn' to the 'integrate()' method in 'negloglik()' after 
    #'link' is assigned() to 'link.fn'.  pnorm() is the probability distribution for a normal random variable.
+
+
    link <- pnorm;
 
-   #This local function name will be assigned to integrand.fn in the subsequent 'assign()' statement and will
-   #be accessible from inside another function (negloglik()).  It has six parameters. lfunc is name of function passed in.
+   #This local function name will be passed to negloglik() as the 3rd parameter. The integrand will be
+   #calculated as a function of p and has five other parameters (kk,n ,mu, sigma, lfunc where lfunc is
+   #a link function passed in.
    integrand <- function(p, kk, n, mu, sigma, lfunc)
    {
       exp(kk * log(lfunc(mu + sigma * qnorm(p))) + (n - kk) * log(1 - lfunc(mu + sigma * qnorm(p))));
    }
    
-   #SU. Renamed this to integrand2; it is called directly from the code of this function and not indirectly through an 
-   #internal function.  It has five parameters. lfunc is name of function passed in.
+   #Renamed this to integrand2; it is called directly from the code of this function and not indirectly 
+   #through an internal function.  It is a function of p and has only four parameters. lfunc is name 
+   #of link function passed in as one of the parameters. 
+   #It assumes probability of exactly kk obligors defaulting:
    integrand2 <- function(p, mu, sigma, kk, lfunc)
    {
       exp(kk * log(lfunc(mu + sigma * qnorm(p))));
    }
 
-   #SU: Replace these S-Plus assignments of "global" variables with R-versions.
-   assign("MLdata.nl", cbind(M, m), env = .GlobalEnv);
-   assign("link.fn", link, env = .GlobalEnv);
-   assign("integrand.fn", integrand, env = .GlobalEnv);
+   #10/9/2007: removed assign() statements.
+   #Combine the defaults M in column 1 and the number of obligors m in column 2 of a matrix:
+   MLdata <- cbind(M,m); 
 
-   #Be sure to use global 'assign()ed' names within this function
-   negloglik <- function(theta)
+   #10/9/2007: added parameters which replace assign(). We pass integrand which integrates over p
+   #with 5 parameters including a link function:
+   negloglik <- function(theta, defaultData, FNIntegrate=integrand, FNlink=link)
    {
-      n <- dim(MLdata.nl)[1]; #substitute global assigned value to determine the number of rows in MLdata.nl
+      #10/9/2007: added tests to make sure some parameters are functions:
+      if(!is.function(FNIntegrate)) stop("parameter FNIntegrate must be a function");
+      if(!is.function(FNlink)) stop("parameter FNlink must be a function");
+
+      n <- dim(defaultData)[1]; #determine the number of rows in defaultData
       #numeric() creates a vector of length n with all values equal to 0.  The sum of the elements of this vector 
       #will be the return value of negloglik()
       out <- numeric(n); 
       for(i in 1:n) 
       {
-         #SU: replace S-Plus assignment variables with those for R. Also R version of integrate() returns list with
-         #$value rather than the S-Plus $integral. Use global 'assign()'ed variables.  5-parameter version. 
-         out[i] <-  - logb(integrate(integrand.fn, lower = 0., upper = 1.,  kk = MLdata.nl[i, 1], 
-                      n = MLdata.nl[i, 2], mu = theta[1], sigma = theta[2]^2, lfunc = link.fn)$value)
+         #R version of integrate() returns list with $value rather than the S-Plus $integral.  
+         #5-parameter version integrating over p: 
+         out[i] <-  - logb(integrate(FNIntegrate, lower = 0., upper = 1.,  kk = defaultData[i, 1], 
+                      n = defaultData[i, 2], mu = theta[1], sigma = theta[2]^2, lfunc = FNlink)$value)
       }
       sum(out);
    }
@@ -294,7 +307,9 @@ fit.binomialProbitnorm <- function(M, m, startvals = c(-1, 0.5),lowerParamLimits
    #par.ests <- out$x
    #These are the replacement R-language lines ('negloglik' is an input function name):
    #Set lower and upper bounds on parameters: startvals are c(-1, 0.5). Hence use L-BFGS-B method rather than BFGS method.
-   optimout <- optim(theta,negloglik,method="L-BFGS-B", lower=lowerParamLimits ,upper=upperParamLimits)
+   #10/9/2007: added parameters to optim() which need to be passed to negloglik:
+   optimout <- optim(theta,negloglik,defaultData=MLdata, FNIntegrate=integrand, FNlink=link,
+           method="L-BFGS-B", lower=lowerParamLimits ,upper=upperParamLimits)
    par.ests <- optimout$par
 
    if(optimout$convergence == 0)
@@ -307,84 +322,86 @@ fit.binomialProbitnorm <- function(M, m, startvals = c(-1, 0.5),lowerParamLimits
       conv = FALSE 
       convtype = "Convergence failed via L-BFGS-B quasi-Newton method"
    }
-
-   loglik <-  - negloglik(par.ests);
+   #10/9/2007: added further parameters to negloglik:
+   loglik <-  - negloglik(par.ests, defaultData=MLdata, FNIntegrate=integrand, FNlink=link);
    par.ests[2] <- par.ests[2]^2;
 
    #integrate() performs NUMERICAL INTEGRATION. See pp. 354-5 in QRM book for a description (Examples 8.12
-   #and 8.13. Integrate to get first moment (probability of precisely one defaulting obligor)
-   tmp1 <- integrate(integrand2, lower = 0, upper = 1, mu = par.ests[1], sigma = par.ests[2], kk = 1, lfunc = link);
-   #SU: In R, the first list item in the return list from function 'integrate()' is called 'value'
+   #and 8.13. Integrate to get first moment (probability of precisely one defaulting obligor).  There is no
+   #n value passed here
+   tmp1 <- integrate(f=integrand2, lower = 0, upper = 1, mu = par.ests[1], sigma = par.ests[2], kk = 1, lfunc = link);
+   #In R, the first list item in the return list from function 'integrate()' is called 'value'
    #rather than 'integral' so we replace the following S-Plus line with its R equivalent:
-   #pi <- tmp1$integral  #S-Plus version
    pi <- tmp1$value  #R-language equivalent
    #Integrate to get 2nd noncentral moment: joint probability of exactly two obligors defaulting.
-   tmp2 <- integrate(integrand2, lower = 0, upper = 1,  mu = par.ests[1], sigma = par.ests[2], kk = 2, lfunc = link)
-   #pi2 <- tmp2$integral  #S-Plus
+   tmp2 <- integrate(f=integrand2, lower = 0, upper = 1,  mu = par.ests[1], sigma = par.ests[2], kk = 2, lfunc = link)
    pi2 <- tmp2$value;
    rhoY <- (pi2 - pi^2)/(pi - pi^2); #See equation 8.22 on p. 345 of QRM Book.
-   
-   #SU: Remove 'assign()'ed R-language global variables:
-   if(!is.null(MLdata.nl))
-       rm(MLdata.nl, envir = .GlobalEnv)
-   if(!is.null(link.fn))
-       rm(link.fn, envir = .GlobalEnv)
-   if(!is.null(integrand.fn))
-       rm(integrand.fn, envir = .GlobalEnv)
-   #Substitute R-convergence values for S-Plus values:
-   #list(par.ests = par.ests, maxloglik = loglik, converged = out$converged, details = out$conv.type, pi = pi, pi2 = pi2, rhoY = rhoY)
    list(par.ests = par.ests, maxloglik = loglik, converged = conv, details = convtype, pi = pi, pi2 = pi2, rhoY = rhoY);
 }
 
 ###########################################################################
 #fit.binomialLogitnorm() differs from fit.binomialProbitnorm() only in the link function.  Here the 
-#link funtion is the logit version, i.e. 1/(1-exp(-z))).
+#link funtion is pnorm() where in the logit version, it is 1/(1-exp(-z))).
 #The argument M is a vector like 'Bdefaults' (the number of defaults) and m is a vector like 
 #'Bobligors' (the number of obligors).  This function calls optim(...method="L-BFGS-B") so you may need to
 #reset lower and upper parameter estimators if convergence occurs at an endpoint of either limit and run
 #another test.
-fit.binomialLogitnorm <- function(M, m, startvals = c(-1, 0.5), lowerParamLimits = c(-5.0, 0.02), 
-    upperParamLimits=c(1,0.9) )
+fit.binomialLogitnorm <- function(M, m, startvals = c(-1, 0.5),lowerParamLimits = c(-5.0, 0.02),
+  upperParamLimits = c(1,0.9))
 {
-   #'link' is the name of a function to be passed via 'link.fn' to the 'integrate()' method in 'negloglik()' after 
-   #'link' is assigned() to 'link.fn'.  The link function here is the so-called logistic function
+   #ARGUMENTS:
+   #  M                      vector of number of successes (defaults)
+   #  m                      vector of number of trials (obligors) 
+   # startvals               values at which to start parameter estimation process
+   # lowerParamLimits        feasible limits for parameter estimates-rerun if outputs equal these limits
+   # upperParamLimits        feasible limits for parameter estimates-rerun if outputs equal these limits
+   # link                    The link function here is the so-called logistic function
+   
    link <- function(z)
    {
 	1/(1 + exp( - z))
    }
 
-   #This local function name will be assigned to integrand.fn in the subsequent 'assign()' statement and will
-   #be accessible from inside another function (negloglik()).  It has six parameters. lfunc is name of function passed in.
+   #This local function name will be passed to negloglik() as the 3rd parameter. The integrand will be
+   #calculated as a function of p and has five other parameters (kk,n ,mu, sigma, lfunc where lfunc is
+   #a link function passed in.
    integrand <- function(p, kk, n, mu, sigma, lfunc)
    {
       exp(kk * log(lfunc(mu + sigma * qnorm(p))) + (n - kk) * log(1 - lfunc(mu + sigma * qnorm(p))));
    }
    
-   #SU. Renamed this to integrand2; it is called directly from the code of this function and not indirectly through an 
-   #internal function.  It has five parameters. lfunc is name of function passed in.
+   #Renamed this to integrand2; it is called directly from the code of this function and not indirectly 
+   #through an internal function.  It is a function of p and has only four parameters. lfunc is name 
+   #of link function passed in as one of the parameters. 
+   #It assumes probability of exactly kk obligors defaulting:
    integrand2 <- function(p, mu, sigma, kk, lfunc)
    {
       exp(kk * log(lfunc(mu + sigma * qnorm(p))));
    }
 
-   #SU: Replace these S-Plus assignments of "global" variables with R-versions.
-   assign("MLdata.nl", cbind(M, m), env = .GlobalEnv);
-   assign("link.fn", link, env = .GlobalEnv);
-   assign("integrand.fn", integrand, env = .GlobalEnv);
+   #10/9/2007: removed assign() statements.
+   #Combine the defaults M in column 1 and the number of obligors m in column 2 of a matrix:
+   MLdata <- cbind(M,m); 
 
-   #Be sure to use global 'assign()ed' names within this function
-   negloglik <- function(theta)
+   #10/9/2007: added parameters which replace assign(). We pass integrand which integrates over p
+   #with 5 parameters including a link function:
+   negloglik <- function(theta, defaultData, FNIntegrate=integrand, FNlink=link)
    {
-      n <- dim(MLdata.nl)[1]; #substitute global assigned value to determine the number of rows in MLdata.nl
+      #10/9/2007: added tests to make sure some parameters are functions:
+      if(!is.function(FNIntegrate)) stop("parameter FNIntegrate must be a function");
+      if(!is.function(FNlink)) stop("parameter FNlink must be a function");
+
+      n <- dim(defaultData)[1]; #determine the number of rows in defaultData
       #numeric() creates a vector of length n with all values equal to 0.  The sum of the elements of this vector 
       #will be the return value of negloglik()
       out <- numeric(n); 
       for(i in 1:n) 
       {
-         #SU: replace S-Plus assignment variables with those for R. Also R version of integrate() returns list with
-         #$value rather than the S-Plus $integral. Use global 'assign()'ed variables.  5-parameter version. 
-         out[i] <-  - logb(integrate(integrand.fn, lower = 0., upper = 1.,  kk = MLdata.nl[i, 1], 
-                      n = MLdata.nl[i, 2], mu = theta[1], sigma = theta[2]^2, lfunc = link.fn)$value)
+         #R version of integrate() returns list with $value rather than the S-Plus $integral.  
+         #5-parameter version integrating over p: 
+         out[i] <-  - logb(integrate(FNIntegrate, lower = 0., upper = 1.,  kk = defaultData[i, 1], 
+                      n = defaultData[i, 2], mu = theta[1], sigma = theta[2]^2, lfunc = FNlink)$value)
       }
       sum(out);
    }
@@ -394,8 +411,10 @@ fit.binomialLogitnorm <- function(M, m, startvals = c(-1, 0.5), lowerParamLimits
    #out <- nlmin(negloglik, theta, max.fcal = 1000., max.iter = 1000.) #S-Plus
    #par.ests <- out$x
    #These are the replacement R-language lines ('negloglik' is an input function name):
-   #Use lower and upper bounds on parameters: startvals are c(-1, 0.5). Hence use L-BFGS-B method rather than BFGS method.
-   optimout <- optim(theta,negloglik,method="L-BFGS-B", lower=lowerParamLimits,upper=upperParamLimits)
+   #Set lower and upper bounds on parameters: startvals are c(-1, 0.5). Hence use L-BFGS-B method rather than BFGS method.
+   #10/9/2007: added parameters to optim() which need to be passed to negloglik:
+   optimout <- optim(theta,negloglik,defaultData=MLdata, FNIntegrate=integrand, FNlink=link,
+           method="L-BFGS-B", lower=lowerParamLimits ,upper=upperParamLimits)
    par.ests <- optimout$par
 
    if(optimout$convergence == 0)
@@ -408,33 +427,21 @@ fit.binomialLogitnorm <- function(M, m, startvals = c(-1, 0.5), lowerParamLimits
       conv = FALSE 
       convtype = "Convergence failed via L-BFGS-B quasi-Newton method"
    }
-
-   loglik <-  - negloglik(par.ests);
+   #10/9/2007: added further parameters to negloglik:
+   loglik <-  - negloglik(par.ests, defaultData=MLdata, FNIntegrate=integrand, FNlink=link);
    par.ests[2] <- par.ests[2]^2;
 
    #integrate() performs NUMERICAL INTEGRATION. See pp. 354-5 in QRM book for a description (Examples 8.12
-   #and 8.13. Integrate to get first moment (probability of precisely one defaulting obligor)
-   tmp1 <- integrate(integrand2, lower = 0, upper = 1, mu = par.ests[1], sigma = par.ests[2], kk = 1, lfunc = link);
-   #SU: In R, the first list item in the return list from function 'integrate()' is called 'value'
+   #and 8.13. Integrate to get first moment (probability of precisely one defaulting obligor).  There is no
+   #n value passed here
+   tmp1 <- integrate(f=integrand2, lower = 0, upper = 1, mu = par.ests[1], sigma = par.ests[2], kk = 1, lfunc = link);
+   #In R, the first list item in the return list from function 'integrate()' is called 'value'
    #rather than 'integral' so we replace the following S-Plus line with its R equivalent:
-   #pi <- tmp1$integral  #S-Plus version
    pi <- tmp1$value  #R-language equivalent
-
-   tmp2 <- integrate(integrand2, lower = 0, upper = 1, rel.tol = .Machine$double.eps^0.25, 
-               mu = par.ests[1], sigma = par.ests[2], kk = 2, lfunc = link)
-   #pi2 <- tmp2$integral  #S-Plus
+   #Integrate to get 2nd noncentral moment: joint probability of exactly two obligors defaulting.
+   tmp2 <- integrate(f=integrand2, lower = 0, upper = 1,  mu = par.ests[1], sigma = par.ests[2], kk = 2, lfunc = link)
    pi2 <- tmp2$value;
-   rhoY <- (pi2 - pi^2)/(pi - pi^2);
-   
-   #SU: Remove 'assign()'ed R-language global variables:
-   if(!is.null(MLdata.nl))
-       rm(MLdata.nl, envir = .GlobalEnv)
-   if(!is.null(link.fn))
-       rm(link.fn, envir = .GlobalEnv)
-   if(!is.null(integrand.fn))
-       rm(integrand.fn, envir = .GlobalEnv)
-   #Substitute R-convergence values for S-Plus values:
-   #list(par.ests = par.ests, maxloglik = loglik, converged = out$converged, details = out$conv.type, pi = pi, pi2 = pi2, rhoY = rhoY)
+   rhoY <- (pi2 - pi^2)/(pi - pi^2); #See equation 8.22 on p. 345 of QRM Book.
    list(par.ests = par.ests, maxloglik = loglik, converged = conv, details = convtype, pi = pi, pi2 = pi2, rhoY = rhoY);
 }
 

@@ -42,14 +42,10 @@ structures by specifying d and rho
    \code{\link{rmghyp}}
 }
 \examples{
-\dontrun{
-ndata <- rmnorm(1000,df=4,rho=0.7,d=3); 
-Sigma <- diag(c(3,4,5)) \%*\% equicorr(3,0.6) 
-         \%*\% diag(c(3,4,5)); 
+Sigma <- diag(c(3,4,5)) \%*\% equicorr(3,0.6) \%*\% diag(c(3,4,5)); 
 mu <- c(1,2,3); 
 tdata <- rmt(1000,4,Sigma,mu); 
 mod1 <- fit.mst(tdata);
-}
 }
 \keyword{distribution}
 

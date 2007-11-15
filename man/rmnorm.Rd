@@ -38,13 +38,10 @@ by specifying d and rho
    \code{\link{equicorr}}
 }
 \examples{
-ndata <- rmnorm(1000,rho=0.7,d=3); 
-\dontrun{
 Sigma <- diag(c(3,4,5)) \%*\% equicorr(3,0.6) \%*\% diag(c(3,4,5)); 
 mu <- c(1,2,3); 
 ndata <- rmnorm(1000,Sigma,mu);
 fit.norm(ndata);
-} 
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{distribution}

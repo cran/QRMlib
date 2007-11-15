@@ -1,4 +1,4 @@
-# S-Plus script developed by Professor Alexander McNeil, mcneil@math.ethz.ch
+# S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
 # This free script using QRMLib is distributed in the hope that it will be useful, 
 # but WITHOUT ANY WARRANTY; without even the implied warranty of 
@@ -7,7 +7,7 @@
 
 ######Load the QRMlib##################
 #QRMlib.pdf is a help file for the functions used by QRMlib.  It is available at
-#...\Program Files\R\R-2.2.1\library\QRMlib\Docs
+#...\Program Files\R\R-2.6.0\library\QRMlib\Docs
 #If you have created the QRMBook workspace and .Rprofile  as described in QRMlib.pdf
 #topics 'QRMBook-workspace' and 'profileLoadLibrary', then you may comment out the
 #following line:
@@ -42,6 +42,7 @@ hist(data.gausscopula[,1])
 pairs(data.tcopula)
 
 # Bivariate Visualization
+#Set lower and upper limits for both x and y:
 ll <- c(0.01,0.99)
 BiDensPlot(func=dcopula.gauss,xpts=ll,ypts=ll,P=equicorr(2,0.5))
 BiDensPlot(func=dcopula.t,xpts=ll,ypts=ll,nu=4,P=equicorr(2,0.5))

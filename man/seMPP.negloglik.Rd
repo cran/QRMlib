@@ -8,7 +8,6 @@
 \usage{
 seMPP.negloglik(theta, PP, case, markdens)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{theta}{vector of parameters of self-exciting model}
   \item{PP}{point-process data}

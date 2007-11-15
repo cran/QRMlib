@@ -65,10 +65,6 @@ function, \code{qbeta} the quantile function, and \code{rbeta}
 generates random deviates.  
 }
 
-\seealso{
- \code{\link{dgamma}},
- For more information on the beta function and others, see \code{\link{Special}}.
-}
 
 \references{
 Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988) \emph{The New S Language}.

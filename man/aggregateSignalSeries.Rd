@@ -69,7 +69,7 @@ dataSimSS <- signalSeries(dataSim);
 #local function
 pearson <- function(x) cor(x)[1,2];
 pearson.cors <- aggregateSignalSeries(dataSimSS,by=m,
-                             together=T,AGGFUNC=pearson);
+                             together=TRUE,AGGFUNC=pearson);
 #Extract the data part only to see a vector of correlation 
 #coefficients for each contiguous subblock
 #in the entire original series.

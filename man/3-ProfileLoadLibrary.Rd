@@ -54,7 +54,7 @@ and choose \emph{All Files}.\cr
 (We are NOT saving as a .txt type.)\cr
 \cr
 6. Paste the path \cr
-\dQuote{C:\\Program Files\\R\\R-2.4.1\\users\\QRMBook\\.Rprofile} \cr
+\dQuote{C:\\Program Files\\R\\R-2.6.0\\users\\QRMBook\\.Rprofile} \cr
 into the File name box. Be sure to spell \emph{.Rprofile} 
 exactly as shown since R uses case sensitivity in opening files even 
 though Windows does not.\cr
@@ -62,7 +62,7 @@ though Windows does not.\cr
 7. Click the \emph{Save} button.\cr
 \cr
 You may now open your QRMBook workspace and the console should show that the 
-QRMlib, fCalendar, fEcofin, mvtnorm, chron, its,and Hmisc libraries have been loaded.
+QRMlib, fSeries, mvtnorm, chron libraries have been loaded.
 }
 
 \note{

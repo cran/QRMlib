@@ -55,21 +55,20 @@ aggregateQuarterlySeries(timeseries, FUNC = colSums)
 \examples{
 #load nasdaq data set:
 data(nasdaq);
+data(DJ);
 #Create daily return series:
 nreturns <- -mk.returns(nasdaq) 
 #convert to quarterly series using maximum value from each quarter:
 quarterly.maxima <- aggregateQuarterlySeries(nreturns, FUNC=max);
-\dontrun{
 Ret.DJ <- mk.returns(DJ);
 #Choose only 10 of the 30 stocks:
 selection1 <- c("AXP","EK","BA","C","KO","MSFT","HWP",
                 "INTC","JPM","DIS");
 partialDJ30dailyTS <- Ret.DJ[,selection1];
-partialDJ30daily <- cut(partialDJ30dailyTS, from="1992-12-31", 
+partialDJ30daily <- window(partialDJ30dailyTS, from="1993-01-01", 
                               to="2000-12-31");
 partialDJ30quarterlyTS <- aggregateQuarterlySeries(partialDJ30daily, 
                            FUNC= colSums);
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{ts}

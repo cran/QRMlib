@@ -32,29 +32,27 @@ see pages 354-355 in QRM
 }
 
 \examples{
-pi.B <- 0.2; pi2.B <- 0.05; 
-probitnorm.pars <- cal.probitnorm(pi.B,pi2.B); 
-probitnorm.pars; 
-beta.pars <- cal.beta(pi.B,pi2.B); 
-\dontrun{
-claytonmix.pars <- cal.claytonmix(pi.B,pi2.B); 
+pi.B <- 0.2; pi2.B <- 0.05 
+probitnorm.pars <- cal.probitnorm(pi.B,pi2.B) 
+probitnorm.pars 
+beta.pars <- cal.beta(pi.B,pi2.B) 
+beta.pars 
+claytonmix.pars <- cal.claytonmix(pi.B,pi2.B) 
+claytonmix.pars 
 q <- (1:1000)/1001; 
 q <- q[q<0.25]; 
 p.probitnorm <- pprobitnorm(q,probitnorm.pars[1],
-                 probitnorm.pars[2]); 
+               probitnorm.pars[2]); 
 p.beta <- pbeta(q, beta.pars[1], beta.pars[2]); 
 p.claytonmix <- pclaytonmix(q,claytonmix.pars[1],
                   claytonmix.pars[2]); 
-scale <- range((1-p.probitnorm),(1-p.beta),
-                (1-p.claytonmix)); 
-plot(q, (1 - p.probitnorm), type = "l", log = "y", 
-      xlab = "q", ylab = "P(Q>q)",ylim=scale); 
+scale <- range((1-p.probitnorm),(1-p.beta),(1-p.claytonmix)); 
+plot(q, (1 - p.probitnorm), type = "l", log = "y", xlab = "q", 
+           ylab = "P(Q>q)",ylim=scale); 
 lines(q, (1 - p.beta), col = 2); 
 lines(q, (1 - p.claytonmix), col = 3); 
-abline(h = 0.01); 
-legend(0.05, 1e-4, c("Probit-normal", "Beta", 
- "Clayton-Mixture"), lty=rep(1,3),col = (1:3)); 
-}
+legend("topright", c("Probit-normal", "Beta", "Clayton-Mixture"), 
+          lty=rep(1,3),col = (1:3)) 
 }
 \keyword{models}
 

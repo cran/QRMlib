@@ -13,8 +13,8 @@ rAC(name, n, d, theta)
 }
 \arguments{
 \item{name}{
-name of the Archimedean copula from following list: 
-clayton, gumbel, frank, BB9 
+Name of the Archimedean copula from following list: 
+clayton, gumbel, frank, BB9, GIG. Names are case-sensitive. 
 }
 \item{n}{
 number of realizations 
@@ -30,7 +30,11 @@ parameter(s) of copula
 a matrix of dimension n times d where rows are realizations 
 }
 \details{
-this function may easily be augmented with further Archimedean copulas 
+this function may easily be augmented with further Archimedean copulas.
+It may be used in place of the older functions rcopula.clayton(), 
+rcopula.gumbel(), and rcopula.frank(). In addition, it allows simulation
+of BB9 and GIG copulas which don't have individual simulation routines. 
+Be very careful because the name argument is case-sensitive.
 }
 \seealso{
    \code{\link{rcopula.clayton}},

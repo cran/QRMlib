@@ -4,7 +4,8 @@
   Generic Quantile-Quantile Plot 
 }
 \description{
-constructs a quantile-quantile plot against a given reference distribution 
+constructs a quantile-quantile plot against a given reference distribution
+(only normal, exponential, and student-t are currently supported) 
 }
 \usage{
 QQplot(data, position=0.5, reference="normal", ...)
@@ -17,10 +18,13 @@ vector of data
 determines the plotting positions (see ppoints in R-help) 
 }
 \item{reference}{
-name of reference distribution (normal, exp, student, etc.) 
+name of reference distribution (only normal, exp, student-t currently allowed) 
 }
 \item{\dots}{
-any further parameters required by quantile function of reference distribution 
+Any further parameters required by quantile function of reference distribution. 
+For example, if reference="exp", you may want to pass 'rate'.  If using the normal
+distribution, you may want to pass mu and sigma. If using the student-t, you may
+wish to pass the df parameter.
 }
 }
 \details{
@@ -38,12 +42,11 @@ NULL returned
 QQ-plot is created on graphical device 
 }
 \seealso{
-   \code{\link{qqnorm}},
    \code{\link{dghyp}}
 }
 \examples{
-QQplot(rnorm(1000),ref="normal"); 
-QQplot(rexp(1000),ref="exp"); 
+QQplot(rnorm(1000),reference="normal"); 
+QQplot(rexp(1000),reference="exp", rate=0.3); 
 }
 \keyword{hplot}
 

@@ -1,7 +1,7 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
-# Copyright (C) 2005-06 Alexander McNeil 
+# Copyright (C) 2005-07 Alexander McNeil 
 # R-language additions Copyright (C) 2006-2007 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch */
+# Contact: Alexander J. McNeil:  a.j.mcneil@hw.ac.uk */
 # R-language contact: Scott Ulman : scottulman@hotmail.com
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 
@@ -28,62 +28,92 @@
 # > BiDensPlot(func=dmnorm,mu=c(0,0),Sigma=equicorr(2,-0.7))
 #   Error in func(data, ...) : F used instead of FALSE
 #   Execution halted
+###################################################
+#11/7/2007: changed first parameter name from x to q so help file will know q 
+#is a quantile.  Hence changed transform to q = (q-mu)/sigma
+pGumbel <- function(q, mu = 0, sigma = 1)
+{
+#Standard Gumbel has mu=0 and sigma=1. Sigma must be positive.
+    if(sigma <= 0) stop("Scale parameter sigma must be strictly positive!");
+    q <- (q - mu)/sigma;
+    exp(-exp(-q));
+}
+
+###################################################
+#To use Gumbel rather than standard Gumbel we must pass scale and location parameters
+#as arguments; 
+qGumbel <- function(p, mu = 0, sigma = 1)
+{
+    if(sigma <= 0) stop("Scale parameter sigma must be strictly positive!");
+    #Make sure p parameter is vector of probabilities from cdf. Use logical AND on (0,1) which will force proper range:
+    if(length(p[(p > 0) & (p < 1)]) < length(p)) stop("p parameter does not represent probabilities");
+    mu + sigma*(-log(-log(p)));
+}
+
+#######################################################
+dGumbel <- function(x, mu = 0, sigma = 1, logvalue=FALSE)
+  {
+    if(sigma <= 0) stop("Scale parameter sigma must be strictly positive!");
+    q <- (x - mu)/sigma; 
+    out <- -q-exp(-q)-log(sigma);
+    if(!(logvalue)) out <- exp(out);
+    out;
+  }
+#########################################################
+
+rGumbel <- function(n, mu=0, sigma=1)
+{
+    if(sigma <= 0) stop("Scale parameter sigma must be strictly positive!");
+    U <- runif(n);
+    qGumbel(U,mu,sigma);
+}
+
 #########################################################
 
 pGEV <- function(q, xi, mu = 0, sigma = 1)
 {
   x <- (q-mu)/sigma
-  if (xi==0) out <- pGumbel(x)
+  #use the new pGumbel which passes mu and sigma and pass q rather than x:
+  if (xi==0) 
+  {
+        return(out <- pGumbel(q, mu, sigma));
+  }
   else out <- exp( - (1 + xi* x)^(-1/xi))
   if (xi  > 0) out[1+xi*x  <= 0] <- 0
   if (xi < 0) out[1+xi*x <=0] <- 1
   out
 }
 
-###################################################
 
-pGumbel <- function(q)
-  {
-    exp(-exp(-q))
-  }
-
-###################################################
-
-qGumbel <- function(p)
-  {
-    mu + sigma*(-log(-log(p)))
-  }
-
-#########################################################
+#######################################################
 
 qGEV <- function(p, xi, mu = 0, sigma = 1)
 {
-  if (xi==0) out <- qGumbel(p)
+  #use the new qGumbel which passes mu and sigma and return result immediately:
+  if (xi==0) 
+  {
+       return(out <- qGumbel(p, mu, sigma))
+  }
   else
     {
       inner <- ((-log(p))^(-xi)-1)/xi
       if (xi> 0) out <- pmax(inner,-1/xi)
       if (xi <0) out <- pmin(inner,1/abs(xi))
-      }
+    }
   mu +sigma*out
 }
-
-#######################################################
-
-dGumbel <- function(x,logvalue=FALSE)
-  {
-    out <- -x-exp(-x)
-    if(!(logvalue)) out <- exp(out)
-    out
-  }
 
 #######################################################
 
 dGEV <- function(x, xi, mu = 0, sigma = 1, logvalue=FALSE)
   {
     xx <- (x-mu)/sigma
-    
-    if (xi==0) out <- dGumbel(xx,logvalue=TRUE)-log(sigma)
+    #use the new dGumbel which passes mu and sigma:
+    #if (xi==0) out <- dGumbel(xx,logvalue=TRUE)-log(sigma)
+    if (xi==0) {
+       return(out <- dGumbel(x, mu, sigma, logvalue));
+    }
+
     else
       { out <- rep(-Inf,length(x))
         out[1+xi*xx>0] <- (-1/xi-1)*log(1+xi*xx[1+xi*xx>0]) - (1+xi*xx[1+xi*xx>0])^(-1/xi) -log(sigma)
@@ -109,48 +139,35 @@ fit.GEV <- function(maxima)
     mu0 <- mean(maxima) - 0.57722 * sigma0
     xi0 <- 0.1
     theta <- c(xi0, mu0, sigma0)
-    #SU: 06/06/2006. All assign(...,frame=1) calls from S-Plus must be replaced by either
-    #assign(...,env=parent.frame()) or by assign(...,env= .GlobalEnv)
-    #The original S-PLUS line is commented out:
-    #assign("maxima.nl", maxima, frame = 1.)
-    #replaced by the R-code line
-    assign("maxima.nl", maxima, env = .GlobalEnv)  #env = parent.frame())
+    
+    #10/5/2007: removed assign() for maxima.nl
+    #10/5/2007: passed additional parameter to avoid using assign()
+    negloglik <- function(theta, maxvalue)
+    {
+      -sum(dGEV(maxvalue,theta[1],theta[2],abs(theta[3]),logvalue=TRUE));        
+    }
 
-    negloglik <- function(theta)
-      {
-        -sum(dGEV(x=maxima.nl,theta[1],theta[2],abs(theta[3]),logvalue=TRUE))        
-	}
-
-    #SU: 06/07/2006. All S-Plus nlmin(f,x) calls must be replaced by calls to either
-    # R-function nlm(f,p) or R-function optim(p,f,method="BFGS") Since nlm() has failed to converge 
-    #in several cases in the code, I am using optim().
-    # The S-PLUS code which calls:
-    #fit <- nlmin(negloglik, theta, max.fcal = 500., max.iter = 200.)
-    #par.ests <- fit$x
-    #is replaced by the following:
-    optimfit <- optim(theta, negloglik, method="BFGS")
-    par.ests <- optimfit$par
+    #10/5/2007: passed additional 4th parameter which will be passed to negloglik
+    optimfit <- optim(theta, fn=negloglik, gr=NULL, maxvalue=maxima, method="BFGS");
+    par.ests <- optimfit$par;
     if(optimfit$convergence == 0) #if code is 0 we are OK; 
       converged <- TRUE
     else
-      converged <- FALSE
+      converged <- FALSE;
     #replace 3rd parameter estimate with its absolute value:
-    par.ests[3] <- abs(par.ests[3])
-    fisher <- hessb(negloglik, par.ests)
-    varcov <- solve(fisher)
+    par.ests[3] <- abs(par.ests[3]);
+    #10/5/2007: added final parameter which must be passed to negloglik
+    fisher <- hessb(negloglik, par.ests, maxvalue=maxima);
+    varcov <- solve(fisher);
 
-    par.ses <- sqrt(diag(varcov))
-    out <- list(par.ests
-                = par.ests, par.ses = par.ses, varcov = varcov, converged = 
-		converged, llmax = -negloglik(par.ests))
-    names(out$par.ests) <- c("xi", "sigma", "mu")
-    names(out$par.ses) <- c("xi", "sigma", "mu")
-    #7/18/2006: removed global variable 'assign()'ed
-    if(!is.null(maxima.nl))
-       rm(maxima.nl, envir=.GlobalEnv)
+    par.ses <- sqrt(diag(varcov));
+    out <- list(par.ests = par.ests, par.ses = par.ses, varcov = varcov, converged = 
+    #10/5/2007: passed additional 2nd parameter to -negloglik()
+    converged, llmax = -negloglik(par.ests,maxima));
+    names(out$par.ests) <- c("xi", "sigma", "mu");
+    names(out$par.ses) <- c("xi", "sigma", "mu");
     out
   }
-
 
 ##############################################################################
 
@@ -169,7 +186,7 @@ pGPD <- function(q, xi, beta=1){
 ###############################################################################
 
 qGPD <- function(p, xi, beta=1)
-  {
+{
     if (xi==0)
       out <- qexp(p)
     else
@@ -180,17 +197,17 @@ qGPD <- function(p, xi, beta=1)
           out <- pmin(inner,1/abs(xi))
       }
     beta*out
-  }
+}
 
 #########################################################################
 
 rGPD <- function(n, xi, beta=1)
-  {
+{
     U <- runif(n);
     #Bugfix on 08/21/2006: must call qGPD(), not gGPD()
     #gGPD(U,xi,beta)
     qGPD(U,xi,beta);
-  }
+}
 
 #########################################################################
 
@@ -208,290 +225,337 @@ dGPD <- function(x, xi, beta=1, logvalue=FALSE)
     if(!(logvalue))
       out <- exp(out)
     out
-  }
+}
 
 ########################################################################
-
+#Find a threshold for GPD estimation
 findthreshold <- function(data, ne)
 {
-	data <- rev(sort(as.numeric(data)))
-	thresholds <- unique(data)
-	indices <- match(data[ne], thresholds)
-	indices <- pmin(indices + 1., length(thresholds))
-	thresholds[indices]
+#Parameters Required:
+#   data - a data set (vector or numeric) whose threshold is to be determined.  
+#          Should be a vector, not a matrix, dataframe, or multiple timeSeries
+#          If using a matrix, pass matname[,n] to pass nth column
+#          If using a df, pass dfname[["colname"]] or dfname[[n]] or dfname$colname or 
+#          dfname[ , "colname"] or dfname[ ,n] where n is col number
+#          If using a timeSeries, pass "as.vector(tS@Data[,n]" to pass nth column of 
+#          timeSeries data
+#   ne   - scalar or vector number of exceesses to use.  
+#  Return value: If passing a scalar ne, return will be the lowest data value from the vector
+#  such that ne values in the vector exceed it.  If passing a vector as ne, the return value
+#  will be a vector containing the threshold value corresponding to each number of exceedances
+#  in the ne vector.
+  #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+  #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+  if (exists("is.R") && is.function(is.R) && is.R()) 
+  {
+     if(is.timeSeries(data)) data <- as.vector(data@Data); 
+     if(!is.vector(data)) stop("data input to findthreshold() must be a vector or timeSeries with only one data column");
+     if(length(data) < ne) stop("data length less than ne (number of exceedances");
+  } 
+  data <- rev(sort(as.numeric(data)));
+  thresholds <- unique(data);
+  indices <- match(data[ne], thresholds);
+  indices <- pmin(indices + 1., length(thresholds));
+  thresholds[indices];
 }
 ##########################################################################
-#SU: This method uses numerical derivatives and the optim() function for the MLE parameters.
+#This method uses numerical derivatives and the optim() function for the MLE parameters.
 #Alternatively, you may use fit.GPDb() which uses the actual calculated derivative function
 #in place of numerical derivatives and uses nlminb() rather than optim().
 fit.GPD <- function(data, threshold = NA, nextremes = NA, method = "ml", information = "observed")
 {
-	data <- as.numeric(data)
-	n <- length(data)
-	if(is.na(nextremes) & is.na(threshold))
-		stop("Enter either a threshold or the number of upper extremes")
+    if(is.na(nextremes) & is.na(threshold))
+      stop("Enter either a threshold or the number of upper extremes");
 	
-	if(!is.na(nextremes) & !is.na(threshold))
-		stop("Enter EITHER a threshold or the number of upper extremes")
+    if(!is.na(nextremes) & !is.na(threshold))
+      stop("Enter EITHER a threshold or the number of upper extremes");
+
+    #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+    #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+    if (exists("is.R") && is.function(is.R) && is.R()) 
+    {
+       if(is.timeSeries(data)) data <- data@Data; 
+    } 
+
+    data <- as.numeric(data);
+    n <- length(data);
 	
-	if(!is.na(nextremes))
-            #call findthreshold() function from this code module:
-		threshold <- findthreshold(data, nextremes)
+    if(!is.na(nextremes))
+    {
+      #10/4/2007: Substitute QRM findthreshold() for S-Plus findthresh()
+      # R complains: no visible global function for 'findthresh' despite fact that R will ALWAYS EXECUTE if statement
+      #and S-plus will execute the else statement
+      #if (exists("is.R") && is.function(is.R) && is.R()){threshold <- findthreshold(data, nextremes);}
+      #else {threshold <- findthresh(data, nextremes);} #Splus
+      threshold <- findthreshold(data, nextremes);
+    }
+    exceedances <- data[data > threshold];
+    excess <- exceedances - threshold;
+    Nu <- length(excess);
+    if(method == "ml") 
+    {
+       xbar <- mean(excess);
+       a0 <- xbar;
+       gamma <- -0.35;
+       delta <- 0.;
+       pvec <- ((1.:Nu) + delta)/(Nu + delta);
+       a1 <- mean(sort(excess) * (1. - pvec))
+       xi <- 2. - a0/(a0 - 2. * a1);
+       beta <- (2. * a0 * a1)/(a0 - 2. * a1);
+       par.ests <- c(xi,beta);
 
+       #10/5/2007: added 2nd parameter to internal negloglik to remove assign():
+       negloglik <- function(theta, excesses)
+       {
+         -sum(dGPD(excesses,theta[1],abs(theta[2]),logvalue=TRUE))
+       }
 
-	exceedances <- data[data > threshold]
-	excess <- exceedances - threshold
-	Nu <- length(excess)
-	if(method == "ml") {
-          xbar <- mean(excess)
-          a0 <- xbar
-          gamma <- -0.35
-          delta <- 0.
-          pvec <- ((1.:Nu) + delta)/(Nu + delta)
-          a1 <- mean(sort(excess) * (1. - pvec))
-          xi <- 2. - a0/(a0 - 2. * a1)
-          beta <- (2. * a0 * a1)/(a0 - 2. * a1)
-          par.ests <- c(xi,beta)
+       #added parameters to pass to negloglik in 3rd position to remove assign(): the is 
+       #the new 
+       optimfit <- optim(par.ests, fn=negloglik, gr=NULL, excesses=excess, method="BFGS");
+       par.ests <- optimfit$par;
+       #replace the 2nd parameter with its absolute value:
+       par.ests[2] <- abs(par.ests[2]);
+       if(optimfit$convergence == 0) #if code is 0 we are OK; 
+         converged <- TRUE
+       else
+         converged <- FALSE;
 
-          #SU: 06/06/2006. All assign(...,frame=1) calls from S-Plus must be replaced by either
-          #assign(...,env=parent.frame()) or by assign(...,env= .GlobalEnv)
-          #The original S-PLUS line is commented out:
-          #assign("excesses.nl", excess, frame = 1.)
-          #replaced by the R-code line
-          assign("excesses.nl", excess, env=.GlobalEnv)  #env=parent.frame())
+       #10/5/2007: added 2nd parameter to negloglik to remove assign(): 
+       ll.max <- -negloglik(optimfit$par, excesses=excess); 
+  
+       if(information == "observed") 
+       {
+         #10/5/2007: passed 3rd parameter to hessb(); it is the excesses parameter to negloglik()
+         fisher <- hessb(negloglik, optimfit$par, excesses = excess);
+         varcov <- solve(fisher);
+       }
+       if(information == "expected") 
+       {
+         one <- (1. + par.ests[1.])^2./Nu;
+         two <- (2. * (1. + par.ests[1.]) * par.ests[2.]^2.)/Nu;
+         cov <-  - ((1. + par.ests[1.]) * par.ests[2.])/Nu;
+         varcov <- matrix(c(one, cov, cov, two), 2.);
+       }
+       
+    }
 
-          negloglik <- function(theta)
-            {
-              -sum(dGPD(excesses.nl,theta[1],abs(theta[2]),logvalue=TRUE))
-            }
-
-	    #SU: 06/27/2006. All S-Plus nlmin(f,x) calls must be replaced by calls to either
-          # R-function nlm(f,p) or R-function optim(p,f,method="BFGS") Since nlm() has failed to converge 
-          #in several cases in the code, I am using optim().
-          # The S-PLUS code which calls nlmin passing xi and beta within par.ests
-          #fit <- nlmin(negloglik, par.ests, max.fcal = 1000, max.iter = 200)
-          #reset par.ests with the result from the fit:
-          #par.ests <- fit$x
-          #par.ests[2] <- abs(par.ests[2])
-          #converged <- fit$converged
-          
-          #must be replaced by the following:
-          optimfit <- optim(par.ests, negloglik, method="BFGS")
-          par.ests <- optimfit$par
-          #replace the 2nd parameter with its absolute value:
-          par.ests[2] <- abs(par.ests[2])
-          if(optimfit$convergence == 0) #if code is 0 we are OK; 
-            converged <- TRUE
-          else
-            converged <- FALSE
-
-          #SU: 06/27/2006: Must replace S-Plus output from nlmin with R-output from optim()
-          #ll.max <- -negloglik(fit$x)
-          ll.max <- -negloglik(optimfit$par)    
-          if(information == "observed") {
-            #Replace S-Plus parameter from nlmin() with R parameter from optim()
-            #fisher <- hessb(negloglik, fit$x)
-            fisher <- hessb(negloglik, optimfit$par)
-            varcov <- solve(fisher)
-          }
-          if(information == "expected") {
-            one <- (1. + par.ests[1.])^2./Nu
-            two <- (2. * (1. + par.ests[1.]) * par.ests[2.]^2.)/Nu
-            cov <-  - ((1. + par.ests[1.]) * par.ests[2.])/Nu
-            varcov <- matrix(c(one, cov, cov, two), 2.)
-          }
-
-          #7/18/2006: removed 'global' variable 'assign'ed in this routine
-          if(!is.null(excesses.nl))
-            rm(excesses.nl, envir=.GlobalEnv)
-	}
-
-
-	if(method == "pwm") 
+    if(method == "pwm") 
+    {
+      xbar <- mean(excess);
+      a0 <- xbar;
+      gamma <- -0.35;
+      delta <- 0.;
+      pvec <- ((1.:Nu) + delta)/(Nu + delta);
+      a1 <- mean(sort(excess) * (1. - pvec));
+      xi <- 2. - a0/(a0 - 2. * a1);
+      beta <- (2. * a0 * a1)/(a0 - 2. * a1);
+      par.ests <- c(xi, beta);
+      denom <- Nu * (1. - 2. * xi) * (3. - 2. * xi);
+      if(xi > 0.5) 
       {
-	 xbar <- mean(excess)
-          a0 <- xbar
-          gamma <- -0.35
-          delta <- 0.
-          pvec <- ((1.:Nu) + delta)/(Nu + delta)
-          a1 <- mean(sort(excess) * (1. - pvec))
-          xi <- 2. - a0/(a0 - 2. * a1)
-          beta <- (2. * a0 * a1)/(a0 - 2. * a1)
-         par.ests <- c(xi, beta)
-         denom <- Nu * (1. - 2. * xi) * (3. - 2. * xi)
-         if(xi > 0.5) {
-           denom <- NA
-           warning("Asymptotic standard errors not available for PWM Method when xi > 0.5")
-         }
-         one <- (1. - xi) * (1. - xi + 2. * xi^2.) * (2. - xi)^2.
-         two <- (7. - 18. * xi + 11. * xi^2. - 2. * xi^3.) * beta^2.
-         cov <- beta * (2. - xi) * (2. - 6. * xi + 7. * xi^2. - 2. *xi^3.)
-         varcov <- matrix(c(one, cov, cov, two), 2.)/denom
-         information <- "expected"
-         converged <- NA
-	 ll.max <- NA
-	}
-	par.ses <- sqrt(diag(varcov))
-	p.less.thresh <- 1. - Nu/n
-	out <- list(n = length(data), data = exceedances, threshold = threshold,
+        denom <- NA;
+        warning("Asymptotic standard errors not available for PWM Method when xi > 0.5");
+      }
+      one <- (1. - xi) * (1. - xi + 2. * xi^2.) * (2. - xi)^2.;
+      two <- (7. - 18. * xi + 11. * xi^2. - 2. * xi^3.) * beta^2.;
+      cov <- beta * (2. - xi) * (2. - 6. * xi + 7. * xi^2. - 2. *xi^3.);
+      varcov <- matrix(c(one, cov, cov, two), 2.)/denom;
+      information <- "expected";
+      converged <- NA;
+      ll.max <- NA;
+    }
+    par.ses <- sqrt(diag(varcov));
+    p.less.thresh <- 1. - Nu/n;
+	
+    out <- list(n = length(data), data = exceedances, threshold = threshold,
 		p.less.thresh = p.less.thresh, n.exceed = Nu, method = method,
 		par.ests = par.ests, par.ses = par.ses, varcov = varcov, 
 		information = information, converged = converged, ll.max = 
-		ll.max)
-	names(out$par.ests) <- c("xi", "beta")
-	names(out$par.ses) <- c("xi", "beta")
+		ll.max);
+    names(out$par.ests) <- c("xi", "beta");
+    names(out$par.ses) <- c("xi", "beta");
     
-	out
+    out;
 }
-
 ######################################################################################
-#SU. This function parallels fit.GPD() except it uses nlminb() for the optimization and utilizes 
+#This function parallels fit.GPD() except it uses nlminb() for the optimization and utilizes 
 #the actual derivative function rather than calculating numerical first derivatives.
+#Pass the data slot of a time series (tS@Data) in lieu of timeSeries.
 fit.GPDb <- function(data, threshold = NA, nextremes = NA, method = "ml", information = "observed")
 {
-	data <- as.numeric(data)
-	n <- length(data)
-	if(is.na(nextremes) & is.na(threshold))
-		stop("Enter either a threshold or the number of upper extremes")
+   if(is.na(nextremes) & is.na(threshold))
+     stop("Enter either a threshold or the number of upper extremes");
 		
-	if(!is.na(nextremes) & !is.na(threshold))
-		stop("Enter EITHER a threshold or the number of upper extremes")
-		
-	if(!is.na(nextremes))
-            #Use findthreshold() method from this module to determine threshold
-	     threshold <- findthreshold(data, nextremes)
-	exceedances <- data[data > threshold]
-	excess <- exceedances - threshold
-	Nu <- length(excess)
-	if(method == "ml") {
-          xbar <- mean(excess)
-          a0 <- xbar
-          gamma <- -0.35
-          delta <- 0.
-          pvec <- ((1.:Nu) + delta)/(Nu + delta)
-          a1 <- mean(sort(excess) * (1. - pvec))
-          xi <- 2. - a0/(a0 - 2. * a1)
-          beta <- (2. * a0 * a1)/(a0 - 2. * a1)
-          par.ests <- c(xi,beta)
-          
-          #SU: COMMENT: this (negloglik()) function is called from nlminb()(a nonlinear minimization
-          # subject to Box constraints).  It appears the R-function for nlminb() is very similar to 
-          #the S-Plus function.  The Ydata parameter to nlminb() is an argument passed both to the 
-          #objective (negloglik()) function (the 2nd parameter passed to nlminb() and the derivative
-          #function.  
-          negloglik <- function(theta,Ydata)
-            {
-              -sum(dGPD(Ydata,theta[1],abs(theta[2]),logvalue=TRUE))
-            }
-          #Similarly, this deriv() function is called  from nlminb()in lieu of calculating numerical
-          #derivatives  The Ydata parameter is also an input to nlminb() which calls this function. 
-          deriv <- function(theta,Ydata)
-            {
-              xi <- theta[1]
-              beta <- theta[2]
-              term1 <- sum(Ydata/(beta+xi*Ydata))
-              term2 <- sum(log(1+xi*Ydata/beta))
-              d1 <- -term2*xi^(-2)+(1+1/xi)*term1
-              d2 <- (length(Ydata)-(xi+1)*term1)/beta
-              c(d1,d2)
-            }
-          options(warn=-2)
-          #Ydata is the 2nd parameter passed to both negloglik() and gradient() when nlminb()
-          #calls them; the first parameter sent to both functions is the first parameter to nlminb(),
-          #i.e. the 'start=par.ests' parameter value.
-          fit <- nlminb(start=par.ests, objective=negloglik,gradient=deriv, Ydata=excess)
-          #In R, the fit parameters returned by list from nlminb() are called $par
-          #par.ests <- fit$parameters
-          #Reset par.ests to the fitted values:          
-          par.ests <- fit$par
-          #The 'beta' parameter must be greater than 0 so convert via absolute value
-          par.ests[2] <- abs(par.ests[2])
-          #R has an output parameter named 'convergence' which is 0 if convergence occurs
-          #converged <- fit$message
-          if(fit$convergence == 0) #if code is 0 we are OK; 
-            converged <- TRUE
-          else
-            converged <- FALSE
+   if(!is.na(nextremes) & !is.na(threshold))
+     stop("Enter EITHER a threshold or the number of upper extremes");
 
-          ll.max <- -fit$objective
-          if(information == "observed") {
-            fisher <- hessb(negloglik, par.ests, ep=0.0001, Ydata=excess)
-            varcov <- solve(fisher)
-          }
-          if(information == "expected") {
-            one <- (1. + par.ests[1.])^2./Nu
-            two <- (2. * (1. + par.ests[1.]) * par.ests[2.]^2.)/Nu
-            cov <-  - ((1. + par.ests[1.]) * par.ests[2.])/Nu
-            varcov <- matrix(c(one, cov, cov, two), 2.)
-          }
-	}
-	if(method == "pwm") {
-	 xbar <- mean(excess)
-          a0 <- xbar
-          gamma <- -0.35
-          delta <- 0.
-          pvec <- ((1.:Nu) + delta)/(Nu + delta)
-          a1 <- mean(sort(excess) * (1. - pvec))
-          xi <- 2. - a0/(a0 - 2. * a1)
-          beta <- (2. * a0 * a1)/(a0 - 2. * a1)
-         par.ests <- c(xi, beta)
-         denom <- Nu * (1. - 2. * xi) * (3. - 2. * xi)
-         if(xi > 0.5) {
-           denom <- NA
-           warning("Asymptotic standard errors not available for PWM Method when xi > 0.5")
-         }
-         one <- (1. - xi) * (1. - xi + 2. * xi^2.) * (2. - xi)^2.
-         two <- (7. - 18. * xi + 11. * xi^2. - 2. * xi^3.) * beta^2.
-         cov <- beta * (2. - xi) * (2. - 6. * xi + 7. * xi^2. - 2. *xi^3.)
-         varcov <- matrix(c(one, cov, cov, two), 2.)/denom
-         information <- "expected"
-         converged <- NA
-	 ll.max <- NA
-	}
-	par.ses <- sqrt(diag(varcov))
-	p.less.thresh <- 1. - Nu/n
-	out <- list(n = length(data), data = exceedances, threshold = threshold,
+    #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+    #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+    if (exists("is.R") && is.function(is.R) && is.R()) 
+    {
+       if(is.timeSeries(data)) data <- data@Data; 
+    } 
+
+    data <- as.numeric(data);
+    n <- length(data);
+
+    if(!is.na(nextremes))
+    {
+      #10/4/2007: Substitute QRM findthreshold() for S-Plus findthresh().  
+      # R complains: no visible global function for 'findthresh' despite fact that R will ALWAYS EXECUTE if statement
+      #and S-plus will execute the else statement
+      #if (exists("is.R") && is.function(is.R) && is.R()){threshold <- findthreshold(data, nextremes);}  #R-language
+      #else {threshold <- findthresh(data, nextremes);} #Splus
+      threshold <- findthreshold(data, nextremes);
+    }
+		
+    exceedances <- data[data > threshold];
+    excess <- exceedances - threshold;
+    Nu <- length(excess);
+    if(method == "ml") 
+    {
+       xbar <- mean(excess);
+       a0 <- xbar;
+       gamma <- -0.35;
+       delta <- 0.;
+       pvec <- ((1.:Nu) + delta)/(Nu + delta);
+       a1 <- mean(sort(excess) * (1. - pvec));
+       xi <- 2. - a0/(a0 - 2. * a1);
+       beta <- (2. * a0 * a1)/(a0 - 2. * a1);
+       par.ests <- c(xi,beta);
+          
+       #SU: COMMENT: this (negloglik()) function is called from nlminb()(a nonlinear minimization
+       # subject to Box constraints).  It appears the R-function for nlminb() is very similar to 
+       #the S-Plus function.  The Ydata parameter to nlminb() is an argument passed both to the 
+       #objective (negloglik()) function (the 2nd parameter passed to nlminb() and the derivative
+       #function.  
+       negloglik <- function(theta,Ydata)
+       {
+          -sum(dGPD(Ydata,theta[1],abs(theta[2]),logvalue=TRUE))
+       }
+       #Similarly, this deriv() function is called  from nlminb()in lieu of calculating numerical
+       #derivatives  The Ydata parameter is also an input to nlminb() which calls this function. 
+       deriv <- function(theta,Ydata)
+       {
+          xi <- theta[1];
+          beta <- theta[2];
+          term1 <- sum(Ydata/(beta+xi*Ydata));
+          term2 <- sum(log(1+xi*Ydata/beta));
+          d1 <- -term2*xi^(-2)+(1+1/xi)*term1;
+          d2 <- (length(Ydata)-(xi+1)*term1)/beta;
+          c(d1,d2);
+       }
+       options(warn=-2);
+       #Ydata is the 2nd parameter passed to both negloglik() and gradient() when nlminb()
+       #calls them; the first parameter sent to both functions is the first parameter to nlminb(),
+       #i.e. the 'start=par.ests' parameter value.
+       fit <- nlminb(start=par.ests, objective=negloglik,gradient=deriv, Ydata=excess);
+       #In R, the fit parameters returned by list from nlminb() are called $par
+       #par.ests <- fit$parameters
+       #Reset par.ests to the fitted values:          
+       par.ests <- fit$par
+       #The 'beta' parameter must be greater than 0 so convert via absolute value
+       par.ests[2] <- abs(par.ests[2])
+       #R has an output parameter named 'convergence' which is 0 if convergence occurs
+       #converged <- fit$message
+       if(fit$convergence == 0) #if code is 0 we are OK 
+          converged <- TRUE
+        else
+           converged <- FALSE;
+
+       ll.max <- -fit$objective;
+       if(information == "observed") 
+       {
+          fisher <- hessb(negloglik, par.ests, ep=0.0001, Ydata=excess);
+          varcov <- solve(fisher);
+       }
+       if(information == "expected") 
+       {
+          one <- (1. + par.ests[1.])^2./Nu;
+          two <- (2. * (1. + par.ests[1.]) * par.ests[2.]^2.)/Nu;
+          cov <-  - ((1. + par.ests[1.]) * par.ests[2.])/Nu;
+          varcov <- matrix(c(one, cov, cov, two), 2.);
+       }
+    }
+    if(method == "pwm") 
+    {
+	xbar <- mean(excess);
+       a0 <- xbar;
+       gamma <- -0.35;
+       delta <- 0.;
+       pvec <- ((1.:Nu) + delta)/(Nu + delta);
+       a1 <- mean(sort(excess) * (1. - pvec));
+       xi <- 2. - a0/(a0 - 2. * a1);
+       beta <- (2. * a0 * a1)/(a0 - 2. * a1);
+       par.ests <- c(xi, beta);
+       denom <- Nu * (1. - 2. * xi) * (3. - 2. * xi);
+       if(xi > 0.5) 
+       {
+           denom <- NA;
+           warning("Asymptotic standard errors not available for PWM Method when xi > 0.5");
+       }
+       one <- (1. - xi) * (1. - xi + 2. * xi^2.) * (2. - xi)^2.;
+       two <- (7. - 18. * xi + 11. * xi^2. - 2. * xi^3.) * beta^2.;
+       cov <- beta * (2. - xi) * (2. - 6. * xi + 7. * xi^2. - 2. *xi^3.);
+       varcov <- matrix(c(one, cov, cov, two), 2.)/denom;
+       information <- "expected";
+       converged <- NA;
+	ll.max <- NA;
+    }
+    par.ses <- sqrt(diag(varcov));
+    p.less.thresh <- 1. - Nu/n;
+    out <- list(n = length(data), data = exceedances, threshold = threshold,
 		p.less.thresh = p.less.thresh, n.exceed = Nu, method = method,
 		par.ests = par.ests, par.ses = par.ses, varcov = varcov, 
 		information = information, converged = converged, ll.max = 
-		ll.max)
-	names(out$par.ests) <- c("xi", "beta")
-	names(out$par.ses) <- c("xi", "beta")
-	out
+		ll.max);
+    names(out$par.ests) <- c("xi", "beta");
+    names(out$par.ses) <- c("xi", "beta");
+    out;
 }
 
 ############################################################################################
-
+#This method will be called from showRM() but you may call it yourself directly IF you
+#have called fit.GPD() first since the first parameter is the return value from fit.GPD
 plotTail <- function(object, extend=2,fineness=1000,...)
 {
-	data <- as.numeric(object$data)
-	threshold <- object$threshold
-	xi <- object$par.ests[names(object$par.ests) == "xi"]
-	beta <- object$par.ests[names(object$par.ests) == "beta"]
-        xpoints <- sort(data)
-        ypoints <- ppoints(sort(data))
-        xmax <- max(xpoints)*extend
-	prob <- object$p.less.thresh
-	ypoints <- (1- prob) * (1 - ypoints)       
-	x <- threshold+qGPD((0:(fineness-1))/fineness, xi, beta)
-        x <- pmin(x,xmax)
-        y <- pGPD(x-threshold, xi,beta)
-        y <- (1- prob) * (1 - y)        
-	plot(xpoints, ypoints, xlim=range(threshold,xmax), ylim = range(ypoints, y), xlab = "x (on log scale)", ylab = "1-F(x) (on log scale)", log="xy",...)
-        lines(x,y)
-	NULL
+#Parameters Required:
+#   object - the return value from a call to fit.GPD which is a list like this:
+#            list(n = length(data), data = exceedances, threshold = threshold,
+#		p.less.thresh = p.less.thresh, n.exceed = Nu, method = method,
+#		par.ests = par.ests, par.ses = par.ses, varcov = varcov, 
+#		information = information, converged = converged, ll.max = 
+#		ll.max)
+
+   data <- as.numeric(object$data);
+   threshold <- object$threshold;
+   xi <- object$par.ests[names(object$par.ests) == "xi"];
+   beta <- object$par.ests[names(object$par.ests) == "beta"];
+   xpoints <- sort(data);
+   ypoints <- ppoints(sort(data));
+   xmax <- max(xpoints)*extend;
+   prob <- object$p.less.thresh;
+   ypoints <- (1- prob) * (1 - ypoints);       
+   x <- threshold+qGPD((0:(fineness-1))/fineness, xi, beta);
+   x <- pmin(x,xmax);
+   y <- pGPD(x-threshold, xi,beta);
+   y <- (1- prob) * (1 - y);        
+   plot(xpoints, ypoints, xlim=range(threshold,xmax), ylim = range(ypoints, y), xlab = "x (on log scale)", ylab = "1-F(x) (on log scale)", log="xy",...)
+        lines(x,y);
+   NULL;
 }
 
 ############################################################################
 # Show Risk-Measure Estimates on Tailplot
 #Parameters Required:
 #   object - the return value from a call to fit.GPD which is a list like this:
-#               list(n = length(data), data = exceedances, threshold = threshold,
+#            list(n = length(data), data = exceedances, threshold = threshold,
 #		p.less.thresh = p.less.thresh, n.exceed = Nu, method = method,
 #		par.ests = par.ests, par.ses = par.ses, varcov = varcov, 
 #		information = information, converged = converged, ll.max = 
 #		ll.max)
-#   alpha - the probability level
+#   alpha - the probability level (a high value like .99)
 # Parameters - Optional
 #   RM - the risk measure, either VaR or ES
 #   extend - how far to extend picture; x-axis extends to this value times the largest observation 
@@ -499,134 +563,132 @@ plotTail <- function(object, extend=2,fineness=1000,...)
 #   like.num - number of evaluations of profile likelihood 
 showRM <- function(object, alpha, RM="VaR", extend=2, ci.p = 0.95, like.num = 50.)
 {	
-      threshold <- object$threshold
-      par.ests <- object$par.ests
-      xihat <- par.ests[names(par.ests) == "xi"]
-      betahat <- par.ests[names(par.ests) == "beta"]
-      p.less.thresh <- object$p.less.thresh
-      a <- (1-alpha)/(1 - p.less.thresh)
-      quant <- threshold+betahat*(a^(-xihat)-1)/xihat
-      es <- quant/(1-xihat) + (betahat-xihat*threshold)/(1-xihat)
+      threshold <- object$threshold;
+      par.ests <- object$par.ests;
+      xihat <- par.ests[names(par.ests) == "xi"];
+      betahat <- par.ests[names(par.ests) == "beta"];
+      p.less.thresh <- object$p.less.thresh;
+      a <- (1-alpha)/(1 - p.less.thresh);
+      quant <- threshold+betahat*(a^(-xihat)-1)/xihat;
+      es <- quant/(1-xihat) + (betahat-xihat*threshold)/(1-xihat);
       #in the following switch, if RM is "VaR:, the 2nd argument quant is selected; otherwise if "ES", then es is selected;
       #otherwise an error occurs.
-      point.est <- switch(RM,VaR=quant,ES=es)
-      plotTail(object,extend=2)
-      abline(v=point.est)
+      point.est <- switch(RM,VaR=quant,ES=es);
+      plotTail(object,extend=2);
+      abline(v=point.est);
       #stretch the x-axis out by multiplying the largest data item by the 4th parameter, which defaults to 2
-      xmax <- max(object$data)*extend
-      #SU: 06/06/2006. All assign(...,frame=1) calls from S-Plus must be replaced by either
-      #assign(...,env=parent.frame()) or by assign(...,env= .GlobalEnv)
-      assign("excesses.nl", object$data - threshold, env = .GlobalEnv)  
-      assign("a.nl", a, env = .GlobalEnv)  
-      assign("u.nl", threshold, env = .GlobalEnv)  
-      assign("RM.nl",RM, env = .GlobalEnv)  
+      xmax <- max(object$data)*extend;
+      #10/5/2007: eliminated assign() by adding parameters to local function called internally from showRM() function
+      parloglik <- function(theta, excessesIn, xpiIn, aIn, uIn, RMIn)
+      {
+         xi <- theta;
+         if (RMIn=="VaR")
+           beta <- xi*(xpiIn-uIn)/(aIn^(-xi)-1);
+         if (RMIn=="ES")
+           beta <- ((1 - xi) * (xpiIn - uIn))/(((aIn^( - xi) - 1)/xi) +1);
+         #Must arbitrarily set 'out' to 1.0e17 (a large value) rather than NA.  
+         #Otherwise we get the error message "Error in optim(xihat,...)Initial value in 'vmmin'
+         # is not finite." Hence replace NA with 1.0e17. We cannot use Inf which gives same error.
+         #Furthermore, if beta == 0, the dGPD() will overflow to NaN in 'else' clause and the same 
+         #optim() error with infinite 'vmmin' will occur.  Hence change the original 'if(beta<0)' 
+         #to 'if(beta <= 0)' and out to 1.0e17 from NA.
+         if (beta <= 0) out <- 1.0e17 #NA
+         else
+            out <- -sum(dGPD(excessesIn,xi,beta,logvalue=TRUE));
+         out;
+       }
 
-       #Local function called internally from within the showRM() function
-       parloglik <- function(theta)
+       parmax <- NULL;
+       start <- switch(RM,VaR=threshold,ES=quant);
+       xp <- exp(seq(from = log(start), to = log(xmax), length = like.num));
+
+       for(i in 1.:length(xp)) 
        {
-            xi <- theta
-            if (RM.nl=="VaR")
-              beta <- xi*(xpi-u.nl)/(a.nl^(-xi)-1)
-            if (RM.nl=="ES")
-              beta <- ((1 - xi) * (xpi - u.nl))/(((a.nl^( - xi) - 1)/xi) +1)
-            #SU 11/1/2006: Must arbitrarily set 'out' to 1.0e17 (a large value) rather than NA.  
-            #Otherwise we get the error message "Error in optim(xihat,...)Initial value in 'vmmin'
-            # is not finite." Hence replace NA with 1.0e17. We cannot use Inf which gives same error.
-            #Furthermore, if beta == 0, the dGPD() will overflow to NaN in 'else' clause and the same 
-            #optim() error with infinite 'vmmin' will occur.  Hence change the original 'if(beta<0)' 
-            #to 'if(beta <= 0)' and out to 1.0e17 from NA.
-            if (beta <= 0) out <- 1.0e17 #NA
-            else
-            out <- -sum(dGPD(excesses.nl,xi,beta,logvalue=TRUE))
-            out
-        }
-
-        parmax <- NULL
-        start <- switch(RM,VaR=threshold,ES=quant)
-        xp <- exp(seq(from = log(start), to = log(xmax), length = like.num))
-
-        for(i in 1.:length(xp)) 
-        {
-          #SU: 08/20/2006. All assign(...,frame=1) calls from S-Plus must be replaced: 
-          # xpi will be used in the internal function parloglik()
-          assign("xpi", xp[i], env=parent.frame());  #don't use .GlobalEnv in this case only
-          #All S-Plus nlmin(f,x) calls must be replaced by calls to optim().
-          optimfit2 <- optim(xihat, parloglik, method="BFGS")
+         #10/5/2007: added parameteres to optim which must be passed to parloglik in positions 3-7
+         # These parameters eliminate the need for any assign() statements.
+          optimfit2 <- optim(xihat, parloglik, excessesIn=(object$data - threshold), xpiIn=xp[i], 
+                       aIn=a, uIn=threshold, RMIn=RM, method="BFGS");
           #build a matrix by adding the parameter rows from each iteration of -parloglik(): 
-          parmax <- rbind(parmax, -parloglik(optimfit2$par))
+          parmax <- rbind(parmax, -parloglik(optimfit2$par, excessesIn=(object$data - threshold), 
+                       xpiIn=xp[i], aIn=a, uIn=threshold, RMIn=RM));
         }
         #set 'overallmax' to the max from the call to fit.GPD:
-        overallmax <-  object$ll.max
-        crit <- overallmax - qchisq(0.999, 1)/2.
-        cond <- parmax > crit
-        #SU: get reduced size vectors by copying only those elements which satisfy 'parmax > crit'
+        overallmax <-  object$ll.max;
+        crit <- overallmax - qchisq(0.999, 1)/2.;
+        cond <- parmax > crit;
+        #Get reduced size vectors by copying only those elements which satisfy 'parmax > crit'
         #into a vector of the same name; hence xp[] and parmax[] will have fewer than 50 elements:
-        xp <- xp[cond]
-        parmax <- parmax[cond]  
+        xp <- xp[cond];
+        parmax <- parmax[cond];  
         #The following 'par()' cmd says the "next high-level plot() command should NOT  
         #clean the frame before drawing as if it were on a new device" according to HELP  
-        par(new = TRUE)
+        par(new = TRUE);
         plot(xp, parmax, type = "n", xlab = "", ylab = "", axes = FALSE,
 			ylim = range(overallmax, crit), xlim=range(threshold,xmax), log = "x");
         #Add an axis to the current plot:
-        axis(4., at = overallmax - qchisq(c(0.95, 0.99), 1.)/2., labels
-			 = c("95", "99"), ticks = TRUE)
-        aalpha <- qchisq(ci.p, 1.)
-        abline(h = overallmax - aalpha/2, lty = 2, col = 2)
+        #10/5/2007: Fixed for R-2.6.0. R uses "tick=" as parameter rather than "ticks=". Added if/else.
+        if (exists("is.R") && is.function(is.R) && is.R()) 
+          {axis(4., at = overallmax - qchisq(c(0.95, 0.99), 1.)/2., labels=c("95", "99"), tick = TRUE)}
+        else {axis(4., at = overallmax - qchisq(c(0.95, 0.99), 1.)/2., labels=c("95", "99"), ticks = TRUE)};
+        aalpha <- qchisq(ci.p, 1.);
+        abline(h = overallmax - aalpha/2, lty = 2, col = 2);
         #Introduce a new condition to replace parmax > crit:
-        cond <- !is.na(xp) & !is.na(parmax)
+        cond <- !is.na(xp) & !is.na(parmax);
         #perform cubic spline interpolation of given points
         #xp and parmax have already been reduced in size. Here they are potentially reduced again:
         #any xp, parmax pair containing valid numbers (both not NA) is included)
-        smth <- spline(xp[cond], parmax[cond], n = 200.)
+        smth <- spline(xp[cond], parmax[cond], n = 200.);
         #Add connected line segments to plot: smth is a vector containing coordinates to join
-        lines(smth, lty = 2., col = 2.)
-        ci <- smth$x[smth$y > overallmax - aalpha/2.]
-        out <- c(min(ci), point.est, max(ci))
-        names(out) <- c("Lower CI", "Estimate", "Upper CI")
-        #SU 7/18/2006: remove all 'global' variables 'assign()'ed in this routine:
-        if(!is.null(excesses.nl))
-          rm(excesses.nl, envir = .GlobalEnv)
-        if(!is.null(a.nl))
-          rm(a.nl, envir = .GlobalEnv)
-        if(!is.null(u.nl))
-          rm(u.nl, envir = .GlobalEnv)
-        if(!is.null(RM.nl))
-          rm(RM.nl, envir = .GlobalEnv)
-        
+        lines(smth, lty = 2., col = 2.);
+        ci <- smth$x[smth$y > overallmax - aalpha/2.];
+        out <- c(min(ci), point.est, max(ci));
+        names(out) <- c("Lower CI", "Estimate", "Upper CI");
 	out
 }
-
-
 ################################################################################
-
 MEplot <- function(data, omit = 3., labels = TRUE, ...)
 {
-	data <- as.numeric(data)
-	n <- length(data)
-	myrank <- function(x, na.last = TRUE)
-	{
-		ranks <- sort.list(sort.list(x, na.last = na.last))
-		if(is.na(na.last))
-			x <- x[is.orderable(x)]
-		for(i in unique(x[duplicated(x)])) {
-			which <- x == i & !is.na(x)
-			ranks[which] <- max(ranks[which])
-		}
-		ranks
-	}
-	data <- sort(data)
-	n.excess <- unique(floor(length(data) - myrank(data)))
-	points <- unique(data)
-	nl <- length(points)
-	n.excess <- n.excess[ - nl]
-	points <- points[ - nl]
-	excess <- cumsum(rev(data))[n.excess] - n.excess * points
-	y <- excess/n.excess
-	plot(points[1.:(nl - omit)], y[1.:(nl - omit)], xlab = "", ylab = "",
-		...)
-	if(labels)
-		title(xlab = "Threshold", ylab = "Mean Excess")
+  #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+  #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+  if(is.timeSeries(data)) data <- data@Data;   
+  data <- as.numeric(data);
+  n <- length(data);
+  #The rank() function "averages ties", so if ranks 4 and 5 have equal values, then they are both listed
+  #as 4.5, a decimal.  Hence rank() returns non-integer values. Function myrank() does the same thing as rank except 
+  #it returns INTEGER VALUES for ranks.  TIES are all given the HIGHEST integer value. Hence if ranked index values
+  #3,4 are tied, EACH receives a 4 so there are is 3 index listed nor are there any decimal values.
+  myrank <- function(x, na.last = TRUE)
+  {
+     #sort.list() will give the index values for the list sorted from smaller to bigger.
+     #Applying sort.list() to sort.list() will rearrange to give the index in the 1st sort.list  
+     #Example.  Suppose 1st sort list returns
+     # [1] 13  9 25  1 30 14  3 29  4 20 18 27  2  8 16 26 10 12 21 19  5 23 11  7  6
+     #[26] 15 24 28 22 17  so the lowest index is in position 4.  Then sort.list(sort.list())
+     #will show 4 as its first value since the 4th value in 1st sort list is 1 (the lowest value in the original list.   
+     ranks <- sort.list(sort.list(x, na.last = na.last));
+     #If the USER OVERRIDES the na.last=TRUE PARAMETER, THIS TEST IS NEEDED; OTHERWISE NO.
+     if(is.na(na.last))
+        #Is there an R-function named is.orderable()? No.  In SPlus, is.orderable() returns !is.na(x) 
+        x <- x[!is.na(x)];  #SPlus uses x <- x[is.orderable(x)]
+     for(i in unique(x[duplicated(x)])) 
+     {
+       which <- x == i & !is.na(x);
+       ranks[which] <- max(ranks[which]);
+     }
+     ranks;
+  }
+  data <- sort(data);
+  #unique() returns a vector with duplicates removed:
+  n.excess <- unique(floor(length(data) - myrank(data)));
+  points <- unique(data);
+  nl <- length(points);
+  n.excess <- n.excess[ - nl];
+  points <- points[ - nl];
+  excess <- cumsum(rev(data))[n.excess] - n.excess * points;
+  y <- excess/n.excess;
+  plot(points[1.:(nl - omit)], y[1.:(nl - omit)], xlab = "", ylab = "",...);
+  if(labels)
+    title(xlab = "Threshold", ylab = "Mean Excess");
 }
 
 ##############################################################
@@ -634,7 +696,7 @@ MEplot <- function(data, omit = 3., labels = TRUE, ...)
 #generalized Pareto model fitted to losses over a high threshold
 #Output - matrix with quantile and shortfall estimates for each probability level 
 #Parameters: 
-#    out - Results of a GPD fit to excesses over high thresholds, i.e the return from
+#    out - Results of a GPD fit to excesses over high thresholds, i.e the list return from
 #          gpd.fit()
 #    p - vector of probability measures for risk levels (e.g. c(.99,.995)  
 # Return Value - matrix with quantile and shortfall estimates for each probability level in p
@@ -663,60 +725,74 @@ RiskMeasures <- function(out, p)
 }
 
 ###################################################
-
+#create a plot showing how the estimate of GPD shape varies with threshold or number of extremes. 
 xiplot <- function(data, models = 30., start = 15., end = 500., reverse = TRUE, ci = 
 	0.95, auto.scale = TRUE, labels = TRUE, table = FALSE, ...)
 {
-	data <- as.numeric(data)
-	qq <- 0.
+       #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+       #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+       if (exists("is.R") && is.function(is.R) && is.R()) 
+       {
+         if(is.timeSeries(data)) data <- data@Data; 
+       } 
+	data <- as.numeric(data);
+	qq <- 0.;
 	if(ci)
-		qq <- qnorm(1. - (1. - ci)/2.)
+		qq <- qnorm(1. - (1. - ci)/2.);
 	x <- trunc(seq(from = min(end, length(data)), to = start, length = 
-		models))
+		models));
 	gpd.dummy <- function(nex, data)
 	{
-		out <- fit.GPD(data = data, nex = nex, information = "expected")
-		c(out$threshold, out$par.ests[1.], out$par.ses[1.])
+		out <- fit.GPD(data = data, nex = nex, information = "expected");
+		c(out$threshold, out$par.ests[1.], out$par.ses[1.]);
 	}
-	mat <- apply(as.matrix(x), 1., gpd.dummy, data = data)
-	mat <- rbind(mat, x)
+	mat <- apply(as.matrix(x), 1., gpd.dummy, data = data);
+	mat <- rbind(mat, x);
 	dimnames(mat) <- list(c("threshold", "shape", "se", "exceedances"),
-		NULL)
-	thresh <- mat[1.,  ]
-	y <- mat[2.,  ]
-	yrange <- range(y)
+		NULL);
+	thresh <- mat[1.,  ];
+	y <- mat[2.,  ];
+	yrange <- range(y);
 	if(ci) {
-		u <- y + mat[3.,  ] * qq
-		l <- y - mat[3.,  ] * qq
-		yrange <- range(y, u, l)
+		u <- y + mat[3.,  ] * qq;
+		l <- y - mat[3.,  ] * qq;
+		yrange <- range(y, u, l);
 	}
-	index <- x
+	index <- x;
 	if(reverse)
-		index <-  - x
+		index <-  - x;
 	if(auto.scale)
 		plot(index, y, ylim = yrange, type = "l", xlab = "", ylab = "",
 			axes = FALSE, ...)
-	else plot(index, y, type = "l", xlab = "", ylab = "", axes = FALSE, ...)
-	axis(1., at = index, lab = paste(x), ticks = FALSE)
-	axis(2.)
-	axis(3., at = index, lab = paste(format(signif(thresh, 3.))), ticks = FALSE
-		)
-	box()
+	else plot(index, y, type = "l", xlab = "", ylab = "", axes = FALSE, ...);
+       #10/4/2007: Fixed for R-2.6.0. R uses "tick=" as parameter rather than "ticks=". Added if/else.
+       if (exists("is.R") && is.function(is.R) && is.R()) 
+       {
+	  axis(1., at = index, labels = paste(x), tick = FALSE);
+	  axis(2.);
+	  axis(3., at = index, labels = paste(format(signif(thresh, 3.))), tick = FALSE);
+       }
+       else
+       {
+         axis(1., at = index, lab = paste(x), ticks = FALSE);
+         axis(2.);
+         axis(3., at = index, lab = paste(format(signif(thresh, 3.))), ticks = FALSE);
+       }
+	box();
 	if(ci) {
-		lines(index, u, lty = 2., col = 2.)
-		lines(index, l, lty = 2., col = 2.)
+		lines(index, u, lty = 2., col = 2.);
+		lines(index, l, lty = 2., col = 2.);
 	}
 	if(labels) {
-		labely <- "Shape (xi)"
+		labely <- "Shape (xi)";
 		if(ci)
-			labely <- paste(labely, " (CI, p = ", ci, ")", sep = ""
-				)
-		title(xlab = "Exceedances", ylab = labely)
-		mtext("Threshold", side = 3., line = 3.)
+			labely <- paste(labely, " (CI, p = ", ci, ")", sep = "");
+		title(xlab = "Exceedances", ylab = labely);
+		mtext("Threshold", side = 3., line = 3.);
 	}
 	if(table)
-		print(mat)
-	NULL
+		print(mat);
+	NULL;
 }
 
 ###################################################
@@ -729,55 +805,69 @@ hillPlot <- function (data, option = c("alpha", "xi", "quantile"), start = 15,
     end = NA, reverse = FALSE, p = NA, ci = 0.95, auto.scale = TRUE, 
     labels = TRUE, ...) 
 {
-    data <- as.numeric(data)
-    ordered <- rev(sort(data))
-    ordered <- ordered[ordered > 0]
-    n <- length(ordered)
-    option <- match.arg(option)
+    #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+    #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+    if (exists("is.R") && is.function(is.R) && is.R()) 
+    {
+      if(is.timeSeries(data)) data <- data@Data; 
+    } 
+
+    data <- as.numeric(data);
+    ordered <- rev(sort(data));
+    ordered <- ordered[ordered > 0];
+    n <- length(ordered);
+    option <- match.arg(option);
     if ((option == "quantile") && (is.na(p))) 
-        stop("Input a value for the probability p")
-    if ((option == "quantile") && (p < 1 - start/n)) {
-        cat("Graph may look strange !! \n\n")
+        stop("Input a value for the probability p");
+    if ((option == "quantile") && (p < 1 - start/n)) 
+    {
+        cat("Graph may look strange !! \n\n");
         cat(paste("Suggestion 1: Increase `p' above", format(signif(1 - 
-            start/n, 5)), "\n"))
+            start/n, 5)), "\n"));
         cat(paste("Suggestion 2: Increase `start' above ", ceiling(length(data) * 
-            (1 - p)), "\n"))
+            (1 - p)), "\n"));
     }
-    k <- 1:n
-    loggs <- logb(ordered)
-    avesumlog <- cumsum(loggs)/(1:n)
-    xihat <- c(NA, (avesumlog - loggs)[2:n])
-    alphahat <- 1/xihat
+    k <- 1:n;
+    loggs <- logb(ordered);
+    avesumlog <- cumsum(loggs)/(1:n);
+    xihat <- c(NA, (avesumlog - loggs)[2:n]);
+    alphahat <- 1/xihat;
     y <- switch(option, alpha = alphahat, xi = xihat, quantile = ordered * 
-        ((n * (1 - p))/k)^(-1/alphahat))
-    ses <- y/sqrt(k)
+        ((n * (1 - p))/k)^(-1/alphahat));
+    ses <- y/sqrt(k);
     if (is.na(end)) 
-        end <- n
-    x <- trunc(seq(from = min(end, length(data)), to = start))
-    y <- y[x]
-    ylabel <- option
-    yrange <- range(y)
-    if (ci && (option != "quantile")) {
-        qq <- qnorm(1 - (1 - ci)/2)
-        u <- y + ses[x] * qq
-        l <- y - ses[x] * qq
-        ylabel <- paste(ylabel, " (CI, p =", ci, ")", sep = "")
-        yrange <- range(u, l)
+        end <- n;
+    x <- trunc(seq(from = min(end, length(data)), to = start));
+    y <- y[x];
+    ylabel <- option;
+    yrange <- range(y);
+    if (ci && (option != "quantile")) 
+    {
+        qq <- qnorm(1 - (1 - ci)/2);
+        u <- y + ses[x] * qq;
+        l <- y - ses[x] * qq;
+        ylabel <- paste(ylabel, " (CI, p =", ci, ")", sep = "");
+        yrange <- range(u, l);
     }
     if (option == "quantile") 
-        ylabel <- paste("Quantile, p =", p)
-    index <- x
+        ylabel <- paste("Quantile, p =", p);
+    index <- x;
     if (reverse) 
-        index <- -x
+        index <- -x;
     if (auto.scale) 
         plot(index, y, ylim = yrange, type = "l", xlab = "", 
             ylab = "", axes = FALSE, ...)
     else plot(index, y, type = "l", xlab = "", ylab = "", axes = FALSE, 
-        ...)
+        ...);
     axis(1, at = index, lab = paste(x), tick = FALSE);
-    axis(2)
-    #SU: Substitute QRM findthreshold() for S-Plus findthresh()
+    axis(2);
+    #10/4/2007 Substitute QRM findthreshold() for S-Plus findthresh()
+    #R complains: no visible global function for 'findthresh' despite fact that R will ALWAYS EXECUTE if statement
+    #and S-plus will execute the else statement
+    #if (exists("is.R") && is.function(is.R) && is.R()){threshold <- findthreshold(data, x);}
+    #else {threshold <- findthresh(data, x);} #Splus
     threshold <- findthreshold(data, x);
+
  
     axis(3, at = index, lab = paste(format(signif(threshold, 
         3))), tick = FALSE);
@@ -801,11 +891,24 @@ plotFittedGPDvsEmpiricalExcesses <- function(data, threshold=NA, nextremes=NA)
 {
   if(is.na(nextremes) & is.na(threshold))
      stop("Enter either a threshold or the number of upper extremes");
+  #10/4/2007: Fixed for R-2.6.0. In R-2.5.0 and prior, as.numeric() could process timeSeries objects directly.  
+  #Beginning with R-2.6.0 you must test for timeSeries and pass only the @Data slot to as.numeric():
+  if (exists("is.R") && is.function(is.R) && is.R()) 
+  {
+    if(is.timeSeries(data)) data <- data@Data; 
+  } 
+
   mod <- fit.GPD(data, threshold, nextremes);
   
   #We need threshold for plot if we don't have it:
   if(!is.na(nextremes))
-    threshold <- findthreshold(data,nextremes);
+    #10/4/2007 Substitute QRM findthreshold() for S-Plus findthresh()
+    # R complains: no visible global function for 'findthresh' despite fact that R will ALWAYS EXECUTE if statement
+    #and S-plus will execute the else statement
+    #if (exists("is.R") && is.function(is.R) && is.R()){threshold <- findthreshold(data, nextremes);}
+    #else {threshold <- findthresh(data, nextremes);} #Splus
+    threshold <- findthreshold(as.vector(data), nextremes);
+
 
   #The values mod$data gives the exceedance values which can be plotted as excesses
   #by subtracting 'threshold' from each value.  We can get the empirical cdf of these excesses.
@@ -817,7 +920,7 @@ plotFittedGPDvsEmpiricalExcesses <- function(data, threshold=NA, nextremes=NA)
   else  
     maxVal <- max(data);
 
-  #Fit the GPD:
+  #Get the quantile vectors for the excesses over the threshold from the GPD fit:
   quantVector <- seq(threshold, maxVal, 0.25);
   pG <- pGPD(quantVector-threshold, mod$par.ests["xi"],mod$par.ests["beta"]); 
   #Plot the two graphs:

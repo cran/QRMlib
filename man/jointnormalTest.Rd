@@ -36,9 +36,8 @@ Ret.DJ <- mk.returns(DJ);
 selection1 <- c("AXP","EK","BA","C","KO","MSFT",
                 "HWP","INTC","JPM","DIS");
 partialDJ30dailyTS <- Ret.DJ[,selection1];
-#Choose only the data from 1/1/1993 to 12/31/2000.  Note 
-#'from' date must be day prior to desired start date.
-partialDJ30daily <- cut(partialDJ30dailyTS,from="1992-12-31", 
+#Choose only the data from 1/1/1993 to 12/31/2000.  
+partialDJ30daily <- window(partialDJ30dailyTS,from="1993-01-01", 
                                to="2000-12-31");
 partialDJ30dailyMatrix <- seriesData(partialDJ30daily);
 #Note the tests on the ten stocks selected from DJ30 fail the test miserably

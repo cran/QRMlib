@@ -1,4 +1,4 @@
-# QRMlib: version 1.4
+# QRMlib: version 1.4.2
 # this file is a component of QRMlib 
 
 # Copyright (C) 2006 Alexander McNeil 
@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software 
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
-# Contact: Alexander J. McNeil:  mcneil@math.ethz.ch 
+# Contact: Alexander J. McNeil:  A.J.McNeil@hw.ac.uk 
 # R-language contact: Scott Ulman : scottulman@hotmail.com 
 # Note in the R-translations that TRUE has been substituted throughout the 
 # code for T (and FALSE for F) when setting default parameter values as 
@@ -32,15 +32,15 @@
 
 .on.attach <- function()
 {
-  cat("QRMlib v1.4, Copyright (C) 2005-2006 Alexander McNeil \n");
+  cat("QRMlib v1.4.2, Copyright (C) 2005-2006 Alexander McNeil \n");
   cat("R-language modifications Copyright (C) 2006-2007 Scott Ulman \n");
 }
 
 ############################################################
-#SU 06/15/2006: changed code to work with R instead of S-Plus
+#SU changed code to work with R instead of S-Plus
 # Here is old S-Plus code which uses a data input type of tsdata (for time series
 #data.  This data type does NOT EXIST in R.  We must use an alternative data type
-# like timeSeries from fCalendar or ts from package stats. 
+# like timeSeries from fSeries or ts from package stats. 
 #mk.returns <- function(tsdata,type="log")
 #{
 #	times <- positions(tsdata)
@@ -60,19 +60,19 @@
 #	times <- times[-1]
 #	timeSeries(returns, times)
 #}
-# Here is the appropriate R-language code.  You must have loaded the fCalendar
-# library via library(fCalendar) prior to calling this method
-# tsdata should be a timeSeries class created from the R-Metrics fCalendar, fSeries types
+# Here is the appropriate R-language code.  You must have loaded the fSeries
+# library via library(fSeries) prior to calling this method
+# tsdata should be a timeSeries class created from the R-Metrics fSeries types
 # the default type is 'log'; however you can input either 'log' or 'relative'
 mk.returns <- function(tsdata,type="log")
 {
-      if(is.timeSeries(tsdata)== FALSE) stop("1st parameter not RMetrics-type 'timeSeries' class-also check fCalendar loaded")
-      if(type == "log")
-         return(returnSeries(tsdata, type="continuous",digits=6))
-      else if(type == "relative")
-         return(returnSeries(tsdata, type="discrete",digits=6))
-      else
-         stop("type parameter must be either 'log' or 'relative'")
+  if(is.timeSeries(tsdata)== FALSE) stop("1st parameter not RMetrics-type 'timeSeries' class-also check fSeries loaded")
+  if(type == "log")
+     return(returnSeries(tsdata, type="continuous",digits=6))
+  else if(type == "relative")
+     return(returnSeries(tsdata, type="discrete",digits=6))
+  else
+     stop("type parameter must be either 'log' or 'relative'")
 }
 #################################################################
 
@@ -129,29 +129,6 @@ edf <- function(v, adjust = FALSE)
   #df[rank(original)]
   as.numeric(df[rank(original)]);
 }
-
-#############################################################
-#SU: 06/15/2006: This function does not seem to be called from anywhere in the Chapter
-# scripts. 'Help' says it may be useful in plotting. 
-mk.oldts <- function(timeseries)
-{
-    #This function converts a 'timeSeries' object to an 'its' object. 'its' stands for
-    #irregular time series.
-       if(!is.timeSeries(timeseries))
-          stop("input must be a timeSeries object");
-
-	data <- seriesData(timeseries)
-       #The following three line of S-Plus code must be replaced
-	#newtimes <- positions(timeseries)
-       #julian <- newtimes@.Data[[1]]
-	#oldtimes <- dates(julian, out.format = "d.m.y")
-       #by these two lines of R code:
-       newtimes <- seriesPositions(timeseries)
-       oldtimes <- as.POSIXct(newtimes@Data)
-
-	its(data, oldtimes)
-}
-
 ###################################################################################
 
 ESnorm <- function(p, mean=0, sd=1)
@@ -205,191 +182,119 @@ symmetrize <- function(matrix)
 
 ############################################################################
 
-#This function factilitate using an R-language timeSeries object from fSeries to
-#characterize 'exceedances', i.e. occurrences above a threshold value).  A prime example 
-#would be the highest daily stock prices in a daily timeSeries where evidence indicates 
-#clustering occurs.  See p. 117 in QRM.
-
-#This method requires that package 'fCalendar' is loaded to represent the 'timeSeries' object and
-#that package 'its' is loaded to represent the irregular times series object which will capture
-#the exceedances (e.g. the top 50 observations in a three-year timeSeries).
-#require(fCalendar)
-#require(its)
-#thresholdValue is the value in the timeSeries above which you have 50 'excess' observations. The
-#threshold will generally be determined by calling the QRM 'findthreshold()' method.
-mk.its.exceedances.tS <- function(timeseries, col=1, thresholdValue)
-{ 
-  #Extract the data and positions from the timeseries.  Choose the desired column
-  data <- seriesData(timeseries);
-  nCol <- dim(data)[2];
-  if(col < 1 || col > nCol)
-     stop("col must be at least 1 and cannot exceed the number of columns of data in timeSeries object");
-  #Pick only the column of data input as 2nd parameter:
-  data <- data[,col];
-
-  dateIndicators <- seriesPositions(timeseries);
-  num <- length(data);
-  
-  #Create a vector which represents the POSITIONS  within the data series where 
-  #the threshold is exceeded.  The maximum length of such a vector would be num
-  #but the actual length will be substantially smaller
-  exceedance.indices <- (1:num)[data>thresholdValue];
-  #Fill exceedance.marks vector with all data items from timeseries which exceed the threshold value:
-  exceedance.marks <- data[data>thresholdValue];
-  #Use the exceedance.indices to extract dates from seriesPositions(timeseries) when exceedences occurred:
-  exceedance.dates <- dateIndicators[exceedance.indices];
-  #Convert the exceedance.dates to POSIXct dates:
-  exceedance.posix <- as.POSIXct(exceedance.dates);
-  #Generate an irregular time series from the values and posixct dates:
-  its(exceedance.marks,exceedance.posix);
-}
-
-#######################################################################3333
-# SU: This version differs from 'mk.its.exceedances.tS' because you pass a data vector without
-#any date associations as the 1st parameter.  To associate 'dates' with the vector, you must
-#pass a time series as the second parameter.  This series should have the dates you want associated
-#with the 'datavector'.  A primary example might be when 'datavector' is generated from a 
-#random number generator (RNG) where the parameters were set by fitting a time series.  Then the
-#'paralleltimeseriesPos' is the position slot of the timeSeries object.
-mk.its.exceedances.vector <- function(datavector, paralleltimeseriesPos, thresholdValue)
-{
-  #timeseriesPos should be the 'positions' portion of a time series (e.g. rseries@positions),
-  #i.e the vector of DATES which the user desires to associate with the input datavector
-  # which contains no associated dates.  The datavector may for example, be a set of simulated
-  #data built from parameters fitted to an actual time series.  Hence we want to associate the
-  #'datavector' with the dates of the associated time series.
-  num <- length(paralleltimeseriesPos);
-
-  #Make sure parallelTimeSeries has same length as vector:
-  if(length(datavector) != num)
-    stop("parallel time series positions must have same length as data input vector");
-
-  #Create a vector which represents the POSITIONS  within the datavector where 
-  #the threshold is exceeded.  The maximum length of such a vector would be num
-  #but the actual length will be substantially smaller
-  exceedance.indices <- (1:num)[datavector>thresholdValue];
-  #Fill exceedance.marks vector with all datavector items which exceed the threshold value:
-  exceedance.marks <- datavector[datavector>thresholdValue];
-  #Use the exceedance.indices to extract dates from paralleltimeseriesPos when exceedences occurred:
-  exceedance.dates <- paralleltimeseriesPos[exceedance.indices];
-  #Convert the extracted exceedance.dates to POSIXct dates:
-  exceedance.posix <- as.POSIXct(exceedance.dates);
-  #Generate an irregular time series from the values and posixct dates:
-  its(exceedance.marks,exceedance.posix);
-}
 
 ############################################################
-# fCalendar. Version 240.10068 function plot.timeSeries() is not working properly
-#when x contains multiple columns of data so we temporarily revert to this version:
-#library(its) #required
-plot.timeSeriesIts <- function (x, reference.grid = TRUE, lty = 1, ...) 
+# Although fSeries 270.62 plot.timeSeries() will supposedly plot multiple columns 
+# of data, both report an error 
+# "Error in xy.coords(x, y, xlabel, ylabel, log) : 
+#  'x' and 'y' lengths differ"
+# when trying to plot multiple fields on the same graph.  
+# Hence we substitute this function to plots multiple timeSeries objects on the same graph
+plotMultiTS <- function(tS, colvec = 1:ncol(tS), type = "l", 
+   ltypvec = 1, lwdvec = 1, yrange, format, at, reference.grid, ...)
+# y is optional and SHOULD NOT APPEAR since the timeSeries contains the dates for the
+# x axis and the Data values for the y-axis.
+# 'colvec' is a vector providing the columns from Data slot which you want plotted;
+# the default is ALL the columns. This will also be used to "set the colors" which
+# can be 0=blank, 1=solid, 2=dashed, 3=dotted, 4=dotdash, 5=longdash, 6=twodash
+# (or the character vectors named by the numbers above).  Defaults to 1.  The next
+# consecutive number will be assigned to each successive column for the colors so the
+# user doesn't really need to set colors.
+# 'type' is type of plot, defaults to line plot
+# 'ltypevec' line-type vector;defaults to scalar 1; 
+# 'lwdvec' is line-width vector; however, it will be set to a single value for
+# line width; (for symbols, different values in vector may be used>
+# 'yrange' a vector of two elements giving the minimum and maximum values for the
+# column values to be plotted.
+# 'format' is an optional date format for the x-axis labels. It defaults to year only.
+# A value like format="%Y-%m") will set the four-digit year prior to the month in the label.
+# 'at' is the parameter for an \emph{axis.POSIXct} call.  Generally omit this parameter. 
+# The 'at' parameter may be set like this:
+# at= seq(as.Date("1993/1/1"), as.Date("2000/1/1"),by="month")
+# but only IF you know the start date and end date of the data and want a more granular set of
+# labels than the default will give.
+# 'reference.grid'  Set to TRUE if you want the graph to have a grid (of vertical and
+# horizontal lines.
+# '...' Any additional parameters to pass to plot (such as par() parameters)
 {
-    #The 'its' class separates the data into a matrix and the dates into POSIXt transforms of
-    #
-    setClass("its", representation("matrix", dates = "POSIXt"))
-    #Note this internal function is called only from the end of this file by the code line
-    #x.its = .its(x@Data, dates = as.POSIXct(seriesPositions(x)), format = x@format)
-    # Hence x is NOT the original timeSeries passed into the function. Instead, it is only the
-    #data portion extracted via @Data.  Similarly, dates are POSIXct transformations of the dates
-    #extracted from the @positions (or via the seriesPositions(x) method. Hence the dimnames(x)[[1]] 
-    #will not really be used. Similarly the format of the date-time variable will be substituted and
-    #the default in the .its() method will not actually be used!!!!!
-    .its <<- function(x, dates = as.POSIXct(x = strptime(dimnames(x)[[1]], 
-        format = "%Y-%m-%d")), names = dimnames(x)[[2]], format = "%Y-%m-%d", 
-        ...) {
-        if (!is(dates, "POSIXt")) 
-            stop("dates should be in POSIX format")
-        dates = as.POSIXct(dates)
-        if (is.null(dim(x))) {
-            dim(x) = c(length(x), 1)
+   if (!is.timeSeries(tS))
+     stop("First argument of plotMultTS() must be a timeSeries object");
+   xdates = tS@positions;  
+   n = dim(tS)[1];  #number of rows of 'timeSeries' object
+   m = dim(tS)[2];  #number of columns of 'timeSeries' object
+
+   #prevent input parameter from being erroneous
+   lengthColvec <- length(colvec);
+   if(colvec[lengthColvec] > m)
+     stop("Maximum column value in colvec input parameter cannot exceed ", m);
+    
+   #X axis has dates; y-axis plots numeric values 
+   #Set 'ylim' as the highest and lowest values for the plot across all columns to be plotted:
+   if (missing(yrange)) 
+   {
+     #Set the smallest and largest values across all columns selected in 'ylim'
+     for (i in 1:length(colvec))
+     {
+        ylimtest <- range(tS@Data[,colvec[i]],na.rm = TRUE);
+        if (i == 1){ ylim <- ylimtest}
+        else 
+        {
+           ylim[1] <- min(ylimtest[1],ylim[1]);
+           ylim[2] <- max(ylimtest[2],ylim[2]);
         }
-        if (is.null(dimnames(x))) {
-            dimnames(x) = list(NULL, NULL)
-        }
-        if (is.null(dimnames(x)[[1]]) & (nrow(x) > 0)) 
-            dimnames(x)[[1]] = 1:nrow(x)
-        if (is.null(dimnames(x)[[2]]) & (ncol(x) > 0)) 
-            dimnames(x)[[2]] = 1:ncol(x)
-        if (!(nrow(x) == length(dates))) {
-            stop("dates length must match matrix nrows")
-        }
-        if (!(ncol(x) == length(names))) {
-            stop("names length must match matrix ncols")
-        }
-        dimnames(x)[[1]] = format(dates, format = format, ...)
-        dimnames(x)[[2]] = names
-        return(new("its", x, dates = dates))
-    }
-    .itsPlot <<- function(x, y, colvec = 1:ncol(x), type = "l", 
-        ltypvec = 1, lwdvec = 1, yrange, format, at, reference.grid, 
-        ...) {
-        if (missing(yrange)) {
-            ylim = range(x, na.rm = TRUE)
-        }
-        else {
-            ylim = yrange
-        }
-        firstp = TRUE
-        xdates = x@dates
-        n = dim(x)[1]
-        m = dim(x)[2]
-        colveclong = rep(colvec, length.out = m)
-        ltypveclong = rep(ltypvec, length.out = m)
-        lwdveclong = rep(lwdvec, length.out = m)
-        for (i in 1:m) {
-            vpoints = c(1, which(!is.na(x[, i])), n)
-            xxx = x[, i]
-            for (j in 1:ncol(xxx)) {
-                if (!firstp) {
-                  par(new = TRUE)
-                }
-                else {
-                  firstp = FALSE
-                }
-                plot(x = xdates[vpoints], y = xxx[vpoints, j], 
+      }
+   }
+   else 
+   {
+       ylim = yrange
+   }
+  
+   #Initialize firstp to TRUE
+   firstp = TRUE;
+      
+   #Replicate the type color, line-type and line width to the input parameter values,
+   #building a vector with one element for each data column selected. 
+   #The following are appropriate if we are using ALL the columns in the timeSeries;
+   colveclong = rep(colvec, length.out = m);
+   ltypveclong = rep(ltypvec, length.out = m);
+   lwdveclong = rep(lwdvec, length.out = m);
+
+
+
+   #there will be one plot call for each column in timeSeries where m is number of columns  
+   #for (i in 1:m)  #this will always print out all the columns
+   for (k in 1:length(colvec)) 
+   {
+       i <- colvec[k];
+       #Do linear interpolation in case there are NA entries. If there are no NA. this will
+       #create a vector of length two greater than the original vector
+       vpoints = c(1, which(!is.na(tS[, i]@Data)), n);
+       xxx = tS[, i]@Data;
+       for (j in 1:ncol(xxx)) #loop through rows j in column i
+       {
+           if (!firstp) 
+           {
+             par(new = TRUE)
+           }
+           else 
+           {
+             #reset firstp to FALSE; next time through loop, 
+             firstp = FALSE
+           }
+           #col is the color set from colveclong
+           plot(x = as.POSIXct(xdates[vpoints]), y = xxx[vpoints, j],
+           #plot(x = xdates[vpoints], y = xxx[vpoints, j], 
                   type = type, col = colveclong[i], ylim = ylim, 
                   lty = ltypveclong[i], lwd = lwdveclong[i], 
-                  xaxt = "n", ...)
-            }
-        }
-        if (reference.grid) 
-            grid()
-        axis.POSIXct(x = xdates[vpoints], side = 1, at = at, 
-            format = format)
-    }
-    `[.its` <<- function(x, i, j, drop, ...) {
-        if (match("dates", names(list(...)), 0) > 0) {
-            dates = list(...)[["dates"]]
-            if (!missing(i)) 
-                stop("cannot specify both dates and i")
-            if (!is(dates, "POSIXt")) 
-                stop("dates should be in POSIX format")
-            dates = as.POSIXct(dates)
-            i = match(dates, dates(x))
-            if (any(is.na(i))) 
-                stop("some dates are not found")
-        }
-        if (missing(drop)) {
-            drop = FALSE
-        }
-        if (missing(i)) {
-            i = min(1, nrow(x)):nrow(x)
-        }
-        if (missing(j)) {
-            j = min(1, ncol(x)):ncol(x)
-        }
-        subx <- x@.Data[i, j, drop = drop]
-        dates <- x@dates[i]
-        ans <- new("its", subx, dates = dates)
-        return(ans)
-    }
-    x.its = .its(x@Data, dates = as.POSIXct(seriesPositions(x)), 
-        format = x@format)
-    .itsPlot(x.its, ltypvec = lty, reference.grid = reference.grid, 
-        ...)
-    invisible(x)
+                  xaxt = "n", ...);
+       }
+   }
+   #Show a grid if the reference.grid parameter was set to TRUE;
+   if (reference.grid) 
+       grid();
+   #axis.POSIXct(x = xdates[vpoints], side = 1, at = at, format = format)
+   axis.POSIXct(x = as.POSIXct(xdates[vpoints]), side = 1, at = at, format = format);
 }
-
 #############################################################
 #This is the S-Plus version of a function which does NOT exist in R.  Before running
 #this function in R, you should have declared the 'signalSeries' class via a call like
@@ -410,8 +315,10 @@ signalSeries <- function(data, positions., units, units.position, from = 1, by =
       #IMPORTANT NOTE: if all parameters are missing (ie. the call is y <- signalSeries()), then a new
       #                EMPTY class will be instantiated.
 
-      
-      #SU: Added these functions internally.  Although regular functions in S-Plus, they do not exist in R.
+     
+      # Although regular functions in S-Plus, is.rectangular() and as.rectangular() do not exist in R.
+      ####### SU: Added these functions internally. #########  
+     # Although regular functions in S-Plus, they do not exist in R.
       as.rectangular <- function(x)
       {
 	if(is.rectangular(x))
@@ -421,12 +328,11 @@ signalSeries <- function(data, positions., units, units.position, from = 1, by =
       is.rectangular <- function(x)
       {
 	(is(x, "character") || is(x, "numeric") || is(x, "complex") || is(x, "factor") ||
-		is(x, "matrix") || (is(x, "data.frame") && (!is(x, "data.sheet") ||
-		!is.ragged(x))) || (is(x, "array") && (length(dim(x)) == 2)) || (is(
+		is(x, "matrix") || (is(x, "data.frame") && (!is(x, "data.sheet")))
+		 || (is(x, "array") && (length(dim(x)) == 2)) || (is(
 		x, "named") && (is.rectangular(x@.Data))) || is(x, "groupVec") || is(
 		x, "seriesVirtual") || is(x, "bdVector") || is(x, "bdFrame"))
       }
-
       #SU. Since R does not have a 'signalSeries' class, we must insure one has been created in the
       #environment before calling new("signalSeries"). If only a virtual function exists in response
       #to the following getClass() call, we must immediately call setClass():
@@ -447,7 +353,8 @@ signalSeries <- function(data, positions., units, units.position, from = 1, by =
 
        #Original S-Plus uses numRows() which doesn't exist in R:
 	#if(!missing(positions.) && (length(positions.) != numRows(data)))
-       if(!missing(positions.) && (length(positions.) != length(data)))
+       numrows <- dim(data)[1];
+       if(!missing(positions.) && (length(positions.) != numrows))
 		stop("Positions and data lengths do not agree")
 
         #Create a new object of class 'signalSeries': 
@@ -478,16 +385,12 @@ signalSeries <- function(data, positions., units, units.position, from = 1, by =
 }
 
 #############################################################
-#SU: 10/30/2006: special function to aggregate daily/weekly timeSeries objects in R
-# into Quarterly timeSeries objects. Rewritten 3/28/2007 for fCalendar 240.10068.
+#SU: R-language special function to aggregate daily/weekly timeSeries objects in R
+# into Quarterly timeSeries objects.  Works with fCalendar 240.10068 in R-2.5.0 and
+# with fSeries 270.62 in R-2.6.0.
 #**********WARNING***************
 #This function has not been extensively tested with daily series which don't start in January
 #*********************************
-#This reworked function is being included in functionsUtility.R.
-#It works with fCalendar version 240.10068 and its somewhat improved functionality
-#with timeSequence() functions under R-2.4.1.  Use the old version of
-#aggregateQuarterlySeries() if running the old version of fCalendar (221.10065) under R-2.2.1
-
 #This function aggregates the returns from a daily (or weekly) 'timeseries' into quarterly returns.
 #  PARAMETERS:
 #  	1) timeseries: 
@@ -595,14 +498,12 @@ aggregateQuarterlySeries <- function(timeseries,FUNC=colSums)
 
 
 ############################################################################
-#SU: 10/30/2006: special function to aggregate daily/weekly timeSeries objects in R
-# into Monthly timeSeries objects.  Rewritten 3/28/2007 for fCalendar 240.10068.
+#SU: R-language special function to aggregate daily/weekly timeSeries objects in R
+# into Monthly timeSeries objects.  Works with fCalendar 240.10068 in R-2.5.0 and
+# with fSeries 270.62 in R-2.6.0.
 #**********WARNING***************
 #This function has not been extensively tested with daily series which don't start in January
 #*********************************
-#This reworked function works with fCalendar version 240.10068 and its somewhat improved functionality
-#with timeSequence() functions under R-2.4.1.  Use aggregateMonthlySeries() if running the old version
-#of fCalendar (221.10065) under R-2.2.1
 #This function aggregates the returns from a daily (or weekly) 'timeseries' into monthly returns.
 #  PARAMETERS:
 #  	1) timeseries: 
@@ -717,8 +618,9 @@ aggregateMonthlySeries <- function(timeseries,FUNC=colSums)
   applySeries(timeseries, from3, to3, by="monthly", FUN=FUNC);
 }  
 ############################################################################
-#SU: 11/15/2006: special function to aggregate daily timeSeries objects in R
-# into weekly timeSeries objects. Rewritten 3/28/2007 for fCalendar 240.10068.
+#SU: R-language function to aggregate daily timeSeries objects in R
+# into weekly timeSeries objects. Works with fCalendar 240.10068 in R-2.5.0 and
+# with fSeries 270.62 in R-2.6.0.
 #This function aggregates the returns from a daily 'timeseries' into weekly returns.
 #  PARAMETERS:
 #  	1) timeseries: 
@@ -837,10 +739,9 @@ aggregateWeeklySeries <- function(timeseries,FUNC=colSums)
 aggregateSignalSeries <- function(x, pos, AGGFUNC, together = FALSE, drop.empty = TRUE, 
         include.ends = FALSE, adj,offset, colnames, by)
 {
-     if(class(x) != "signalSeries") 
-        stop("x must be of the signalSeries class");
+     if(class(x) != "signalSeries")  stop("x must be of the signalSeries class");
       
-     ####### SU: Added these functions internally. #########  
+ ####### SU: Added these functions internally. #########  
      # Although regular functions in S-Plus, they do not exist in R.
  
       as.rectangular <- function(x)
@@ -852,8 +753,8 @@ aggregateSignalSeries <- function(x, pos, AGGFUNC, together = FALSE, drop.empty 
       is.rectangular <- function(x)
       {
 	(is(x, "character") || is(x, "numeric") || is(x, "complex") || is(x, "factor") ||
-		is(x, "matrix") || (is(x, "data.frame") && (!is(x, "data.sheet") ||
-		!is.ragged(x))) || (is(x, "array") && (length(dim(x)) == 2)) || (is(
+		is(x, "matrix") || (is(x, "data.frame") && (!is(x, "data.sheet")))
+		 || (is(x, "array") && (length(dim(x)) == 2)) || (is(
 		x, "named") && (is.rectangular(x@.Data))) || is(x, "groupVec") || is(
 		x, "seriesVirtual") || is(x, "bdVector") || is(x, "bdFrame"))
       }
@@ -866,12 +767,12 @@ aggregateSignalSeries <- function(x, pos, AGGFUNC, together = FALSE, drop.empty 
       }
       ############end internal functions added ####################
 
-	# Aggregate series object to new positions
- 	#origpos <- positions(x) #S-Plus version
-       #R-version must get number of columns via dimension from data slot and then build sequence
-       origpos <- seq(1,dim(x@data)[1],1); 
+      # Aggregate series object to new positions
+      #origpos <- positions(x) #S-Plus version
+      #R-version must get number of columns via dimension from data slot and then build sequence
+      origpos <- seq(1,dim(x@data)[1],1); 
 	
-	# construct an object of type 'signalSeries' for return
+      # construct an object of type 'signalSeries' for return
 	newobj <- new("signalSeries");
        #Set the new 'signalSeries' slots equal to those from the first parameter passed in
 	newobj@units.position <- x@units.position
@@ -885,97 +786,99 @@ aggregateSignalSeries <- function(x, pos, AGGFUNC, together = FALSE, drop.empty 
        #build vector holding min and max of origpos:
 	rng <- range(origpos);
 	# construct positions if 'pos' not passed as parameter
-	if(missing(pos)) 
-      {
+       if(missing(pos)) 
+       {
 	  pos <- seq(from = rng[1], to = rng[2] + by, by = by);
 	  diffpos <- diff(as(pos, "numeric")); #force to 'numeric' type
-	}
-	else 
-      {
-	  # if they passed in positions, add another at the end, to make into breakpoints
-	  poslen <- length(pos)
+       }
+       else 
+       {
+	 # if they passed in positions, add another at the end, to make into breakpoints
+	 poslen <- length(pos);
          #create lagged differences in positions (defaults to lag by 1)
-	  diffpos <- diff(as(pos, "numeric"));
-	  if(anyMissing(diffpos) || min(diffpos) < 0)
-			stop("Positions for aggregation must be monotonically increasing without NA values")
-		if(poslen > 1) 
-             {
-			dm <- max(diffpos)
-			pos[poslen + 1] <- pos[poslen] + dm
-			diffpos <- c(diffpos, dm)
-		}
-		else 
-             {
-			pos[poslen + 1] <- pos[poslen] + 1
-			diffpos <- c(diffpos, 1)
-		}
-	}
-	poslen <- length(pos);
-	if(length(pos) < 2)
+	 diffpos <- diff(as(pos, "numeric"));
+	 if(anyMissing(diffpos) || min(diffpos) < 0)
+            stop("Positions for aggregation must be monotonically increasing without NA values")
+         if(poslen > 1) 
+         {
+           dm <- max(diffpos);
+           pos[poslen + 1] <- pos[poslen] + dm;
+           diffpos <- c(diffpos, dm);
+         }
+         else 
+         {
+            pos[poslen + 1] <- pos[poslen] + 1;
+            diffpos <- c(diffpos, 1);
+         }
+       }
+       poslen <- length(pos);
+       if(length(pos) < 2)
 		return(newobj);
 
  	# make bins, and take endpoint off positions we are keeping
-	posbins <- pos
-	pos <- pos[ - length(pos)]
+	posbins <- pos;
+	pos <- pos[ - length(pos)];
 
 	# get right bin endpoints
-	if(include.ends) {
-		posbins[1] <- min(posbins[1], rng[1])
-		posbins[poslen] <- max(posbins[poslen], rng[2])
+	if(include.ends) 
+        {
+          posbins[1] <- min(posbins[1], rng[1]);
+          posbins[poslen] <- max(posbins[poslen], rng[2]);
 	}
 
        #Bugfix: parameter 'labels=FALSE' must be set to force return of integer codes instead
        #of FACTORS.  Also right=FALSE must be set to get the first interval not to be NA
        #poscut <- cut(origpos, posbins, include.lowest = F, left.includ = T) # S-Plus
-	poscut <- cut(origpos, posbins, labels=FALSE, right=FALSE); 
-
-	poscut[is.na(poscut)] <- 0
-	if(!drop.empty) {
-		poscats <- seq(along = pos)
-		whichpos <- T
-	}
-	else 
-	{
-             #unique() removes any duplicates; then sort the unique vector and allow only strictly
-             #positive values in poscats.  Hence poscats should be sorted, unique copy of poscuts 
-		poscats <- sort(unique(poscut))
-		poscats <- poscats[poscats > 0]
-		whichpos <- poscats
-	}
-	#Apply the function listed in the 2nd argument to poscats to build new series data.
+      poscut <- cut(origpos, posbins, labels=FALSE, right=FALSE); 
+      poscut[is.na(poscut)] <- 0;
+      if(!drop.empty) 
+      {
+          poscats <- seq(along = pos);
+          whichpos <- TRUE;
+      }
+      else 
+      {
+          #unique() removes any duplicates; then sort the unique vector and allow only strictly
+          #positive values in poscats.  Hence poscats should be sorted, unique copy of poscuts 
+          poscats <- sort(unique(poscut));
+          poscats <- poscats[poscats > 0];
+          whichpos <- poscats;
+      }
+      #Apply the function listed in the 2nd argument to poscats to build new series data.
        #The 2nd parameter defines a function; the 3rd-7th parameters to lapply() are passed
        #to the function specified in the 2nd parameter of lapply() as parameters 2-6.  
-	newdat <- lapply(poscats, function(thecat, x, nc, poscut, func, 
-			together)
-	{
-              #CRITICAL:  the function sub()in S-Plus is a subscript operator; in R it is
-              #a substitution (grep like) method.  Hence replace it with standard subscript notation.
-              cols <- if(together) func(x[ poscut == thecat,  ])
-		 #cols <- if(together) func(sub(x, poscut == thecat,  )) 
-                else if(nc > 0)
-			sapply(1:nc, function(col, x, fun)
-			{
-				#fun(sub(x,  , col)) #S-Plus version
-				fun(x[  , col])
-			}
-			#, sub(x, poscut == thecat,  ), func) #S-Plus version
-			, x[poscut == thecat,  ], func)
+       newdat <- lapply(poscats, function(thecat, x, nc, poscut, func, together)
+       {
+          #CRITICAL:  the function sub()in S-Plus is a subscript operator; in R it is
+          #a substitution (grep like) method.  Hence replace it with standard subscript notation.
+          #cols <- if(together) func(sub(x, poscut == thecat,  )) 
+          cols <- if(together) func(x[ poscut == thecat,  ])
+                      else if(nc > 0)
+                          sapply(1:nc, function(col, x, fun)
+                          {
+                              #fun(sub(x,  , col)) #S-Plus version
+		                fun(x[  , col])
+                          }
+	              #, sub(x, poscut == thecat,  ), func) #S-Plus version
+	              , x[poscut == thecat,  ], func)
 			else numeric(0)
 		cols <- as.rectangular(cols)
-		if(is(cols, "matrix") && numRows(cols) != 1)
+              #numRows does not exist in R although it does exist in SPlus
+        	 #if(is(cols, "matrix") && numRows(cols) != 1) #Splus
+              if(is(cols, "matrix") && dim(cols)[1] != 1) #since cols is a matrix, this works in R
 			cols <- matrix(cols, nrow = 1)
 		cols
-	}
+          }
 	#, x@data, numCols(x), poscut, AGGFUNC, together)
        # dim(x@data)[2] gives the number of columns in a signalSeries object x rather than using 
        #the S-Plus function numCols(x)which does NOT EXIST in R.
        ,x@data, dim(x@data)[2], poscut, AGGFUNC, together) 
 
 	# add offset or adj to positions IF they have been provided as parameters:
-	if(!missing(offset)) pos <- pos + offset else if(!missing(adj) && (poslen >
-		1)) 
+	if(!missing(offset)) pos <- pos + offset 
+        else if(!missing(adj) && (poslen >1)) 
 	{
-		pos <- pos + adj * diffpos
+          pos <- pos + adj * diffpos
 	}
 
 
@@ -983,16 +886,70 @@ aggregateSignalSeries <- function(x, pos, AGGFUNC, together = FALSE, drop.empty 
 	newdat <- do.call("rbind", newdat)
 
 	if(missing(colnames))
-		#colnames <- colIds(x@data) #S-Plus
-		colnames <- x@units
+         #colnames <- colIds(x@data) #S-Plus
+          colnames <- x@units;
 	#if(!is.null(colnames) && (numCols(newdat) == length(colnames))) #S-Plus
 	#	colIds(newdat) <- colnames   #S-Plus
-       if(!is.null(colnames) && (dim(x@data)[2] == length(colnames)))
-		newdat@units <- colnames
+        if(!is.null(colnames) && (dim(x@data)[2] == length(colnames)))
+		newdat@units <- colnames;
 
-	newobj@positions <- pos[whichpos]
-	newobj@data <- newdat
-	newobj
+	newobj@positions <- pos[whichpos];
+	newobj@data <- newdat;
+	newobj;
 }
 ############################################################################
-
+#In RMetrics new version of timeSeries class 260.72 which has been moved from the 
+#fCalendar package to the fSeries class, dates MUST be in a ten-character
+#format like mm/dd/yyyy.  They may NOT have eight or nine characters like
+#m/d/yyyy or mm/d/yyyy or m/dd/yyyy.  In particular the function .midnightStandard()
+#called from timeSeries returns an error message 
+#    stop("'charvec' has non-NA entries of different number of characters")
+#ConvertDFToTimeSeries() converts a data.frame object to a timeSeries object and
+#insures that the any eight- or nine-character date elements are converted to the 
+#ten-character format required by timeSeries.
+ConvertDFToTimeSeries <- function(dataframe)
+{
+  if(!is.data.frame(dataframe)) stop("object passed must be a dataframe!");
+  
+  #This function takes a character date vector with format %m/%d/%Y where the 
+  #leading zeroes for month and day may be missing and adds them.  Hence it 
+  #converts "1/3/2003" to "01/03/2003" and "11/3/2003" to "11/03/2003".
+  #The input parameter is a vector of character dates.  The return value
+  #is the vector with all dates containing exactly 10 characters: 2 digits
+  #for month, 2 digits for day, 4 digits for year, and 2 "/" separators.
+  convertDateCharvecToLength10 <- function(charvec)
+  {
+    for(i in 1:length(charvec))
+    {
+      if(nchar(charvec[i])== 8 || nchar(charvec[i])==9)
+      {
+        #remove the slashes:
+        zippo <- unlist(strsplit(charvec[i],"\\/"));
+        #if the first character vector has only a single digit, precede it with a 0:
+        if(nchar(zippo[1],type="chars") == 1)
+          newstring <- paste("0",zippo[1],"/",sep="")
+        else
+          newstring <- paste(zippo[1],"/",sep="");
+        #if the 2nd character vector has only a single character, precede it with a 0:
+        if(nchar(zippo[2],type="chars") == 1)
+          newstring2 <- paste(newstring,"0",zippo[2],"/",zippo[3],sep="")
+        else 
+          newstring2 <- paste(newstring,zippo[2],"/",zippo[3],sep="")
+        charvec[i] <- newstring2;    
+        #cat("\nnewstring2 = ",newstring2); #debug only 
+      }  
+      next;
+    }
+    return(charvec);
+  }
+  dataframeCopy <- dataframe;
+  #Create the charvec of dates from the dataframe:
+  charvec <- as.character(as.vector(dataframe[ ,1]));
+  #Call the internal function to convert the DATE values to ten characters: 
+  dataframeDateCvt <- convertDateCharvecToLength10(charvec);
+  dataframeCopy$DATE <- dataframeDateCvt;
+  #MUST RUN THIS TO REORDER THE DATES PROPERLY  
+  as.ordered(dataframeCopy$DATE);
+  cvtTS <- as.timeSeries.data.frame(dataframeCopy);
+}
+###########################################

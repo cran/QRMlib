@@ -75,10 +75,7 @@ data(DJ);
 #Make returns from timeSeries (the default is log-returns). 
 #Ret.DJ is a timeSeries class.
 Ret.DJ <- mk.returns(DJ);
-#In R, cut() method works by selecting data only between the 
-#'to' and 'from' dates. Hence  we will use the remaining (cut) data from 
-#1993-01-01 to 2000-12-31. MUST use PRIOR DAY on 'from' 
-DJ30dailyTS <- cut(Ret.DJ, from="1992-12-31", to="2000-12-31");
+DJ30dailyTS <- window(Ret.DJ, from="1993-01-01", to="2000-12-31");
 DJ30daily <- 100*seriesData(DJ30dailyTS);
 #Extract only the Microsoft returns as 'rseries'; remember this is a vector--not a timeSeries
 rseries <- DJ30daily[,"MSFT"];

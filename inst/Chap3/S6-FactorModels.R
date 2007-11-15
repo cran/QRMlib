@@ -1,4 +1,4 @@
-# S-Plus script developed by Professor Alexander McNeil, mcneil@math.ethz.ch
+# S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
 
 # This free script using QRMLib is distributed in the hope that it will be useful, 
@@ -8,17 +8,24 @@
 
 ######Load the QRMlib and DJ data set##################
 #QRMlib.pdf is a help file for the functions used by QRMlib.  It is available at
-#...\Program Files\R\R-2.2.1\library\QRMlib\Docs
+#...\Program Files\R\R-2.6.0\library\QRMlib\Docs
 #If you have created the QRMBook workspace and .Rprofile  as described in QRMlib.pdf
 #topics 'QRMBook-workspace' and 'profileLoadLibrary', then you may comment out the
 #following line:
 library(QRMlib);
-#if you have previously opened the DJ data set (the Dow Jones for 30 stocks) AND saved 
-#the workspace, you may comment out the following line:
+#if you have previously opened the DJ timeSeries (the Dow Jones for 30 stocks) AND 
+#saved the workspace, you may comment out the following line:
 data(DJ);
+#Alternatively, if you want to load the dataframe instead of timeSeries,
+#activate the following line:
+#data(DJ.df);
+
 #if you have previously opened the dji data set (the dow jones index) AND saved the
 #workspace, you may comment out the following line:
 data(dji);
+#Alternatively, if you want to load the dataframe instead of timeSeries,
+#activate the following line:
+#data(dji.df);
 #################################################
 
 
@@ -36,7 +43,9 @@ tsRelPctRet.DJ <- 100*mk.returns(DJ,type="relative");
 selection <- c("MO","KO","EK","HWP","INTC","MSFT","IBM","MCD","WMT","DIS")
 tsRelPctRet.DJ <- tsRelPctRet.DJ[,selection];
 #In version 240.10068, fCalendar uses cut() rather than cutSeries() to select a subset from timeseries:
-Xdata.ts <- cut(tsRelPctRet.DJ, from="1991-12-31", to="1998-12-30");
+#R-2.6.0. RMetrics 260.72 moved timeSeries to fSeries from fCalendar. Used window() in place of cut().
+#No longer need prior date:
+Xdata.ts <- window(tsRelPctRet.DJ, from="1992-01-01", to="1998-12-30");
 #Extract the data only:
 Xdata <- seriesData(Xdata.ts);
 #produce a matrix of scatterplots:
@@ -44,8 +53,12 @@ pairs(Xdata);
 
 tsRelPctDJ30indexreturns <- 100*mk.returns(dji,type="relative");
 #Create the single Factor which is the dow jones index pct returns
-#In version 240.10068, fCalendar uses cut() rather than cutSeries() to select a subset from timeseries:
-Fdata <- cut(tsRelPctDJ30indexreturns, from="1991-12-31", to="1998-12-30");
+#Through R-2.5.1, timeSeries class originally belong in package fCalendar. 
+#Version 221.10065 used cutSeries()method to select data only between the 'to' and 'from' dates. 
+#Version 240.10068 used cut(). Both required the day PRIOR to desired start in "from".
+#R-2.6.0. RMetrics 260.72 moved timeSeries to fSeries from fCalendar. Used window() in place of cut().
+#No longer need prior date:
+Fdata <- window(tsRelPctDJ30indexreturns, from="1992-01-01", to="1998-12-30");
 Fdata <- as.vector(seriesData(Fdata));
 
 
@@ -184,7 +197,7 @@ print.loadings.local(cor.data - cor.fact)
 
 # Spectral Decomposition
 #S-Plus has an unbiased switch. R does not. To set the biased mode, multiply by (n-1/n)
-#S <- var(Xdata,unbiased=F)  #S-Plus version
+#S <- var(Xdata,unbiased=FALSE)  #S-Plus version
 length <- dim(Xdata)[1];
 S <- var(Xdata)*(length-1)/length;
 rm(length);
@@ -258,8 +271,8 @@ outA$loadings
 
 # Closer look at factor loadings
 #par(mfrow=c(1,2))
-#barplot(loadings(outB)[1,],names=colIds(loadings(outB)),horiz=T,main="Factor 1 loadings")
-#barplot(loadings(outB)[2,],names=colIds(loadings(outB)),horiz=T,main="Factor 2 loadings")
+#barplot(loadings(outB)[1,],names=colIds(loadings(outB)),horiz=TRUE,main="Factor 1 loadings")
+#barplot(loadings(outB)[2,],names=colIds(loadings(outB)),horiz=TRUE,main="Factor 2 loadings")
 # Standardize loadings to give portfolio weights
 #plot(summary(mimic(outB)))
 #par(mfrow=c(1,1))

@@ -34,10 +34,10 @@ see pages 222-224 in QRM
    \code{\link{rcopula.t}}
 }
 \examples{
-\dontrun{
-data <- rcopula.frank(1000,1.5,4); 
-pairs(data); 
-}
+#generate data for a 2-dimensional frank copula with theta=4 
+simdata <- rcopula.frank(1000,2,4); 
+pairs(simdata); 
+simdata <- rAC("frank",1000,2,4)
 }
 \keyword{distribution}
 

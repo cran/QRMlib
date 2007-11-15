@@ -50,10 +50,10 @@ JRM Hosking and JR Wallis, Technometrics 29(3), pages 339-349, 1987.
 data(danish);
 plot(danish); 
 losses <- seriesData(danish); 
-mod <- fit.GPD(danish,10); 
-mod$par.ests; 
-modb <- fit.GPD(danish,10,method="pwm"); 
-modb$par.ests; 
+mod <- fit.GPD(danish,threshold=10); 
+mod; 
+modb <- fit.GPD(danish,threshold=10,method="pwm"); 
+modb; 
 }
 \keyword{methods}
 

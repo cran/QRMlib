@@ -51,22 +51,21 @@ aggregateMonthlySeries(timeseries, FUNC = colSums)
 \examples{
 #load nasdaq data set:
 data(nasdaq);
+data(DJ);
 #Create minus daily return series:
 nreturns <- -mk.returns(nasdaq); 
 #convert to monthly series using max value from each month 
 #(rather than colSums):
 monthly.maxima <- aggregateMonthlySeries(nreturns, FUNC=max);
-\dontrun{
 Ret.DJ <- mk.returns(DJ);
 #Choose only 10 of the 30 stocks:
 selection1 <- c("AXP","EK","BA","C","KO","MSFT","HWP",
                 "INTC","JPM","DIS");
 partialDJ30dailyTS <- Ret.DJ[,selection1];
-partialDJ30daily <- cut(partialDJ30dailyTS, from="1992-12-31", 
+partialDJ30daily <- window(partialDJ30dailyTS, from="1993-01-01", 
                                to="2000-12-31");
 partialDJ30monthlyTS <- aggregateMonthlySeries(partialDJ30daily, 
                          FUNC= colSums);
-}
 }
 \seealso{
    \code{\link{aggregateWeeklySeries}},

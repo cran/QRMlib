@@ -5,8 +5,7 @@
   creates a picture of an unmarked point process.
 }
 \usage{
-plot.PP(x, \dots)
-}
+\method{plot}{PP}(x, \dots)}
 \arguments{
 \item{x}{a point process object of class PP which must be unmarked}
 \item{\dots}{
@@ -27,9 +26,9 @@ internally separated into starttime and endtime values to pass to plot.stepfun()
 data(sp500);
 sp500.nreturns <- -mk.returns(sp500);
 window <- (seriesPositions(sp500.nreturns) > 
-      timeDate("12/31/1995",format = "\%m/\%d-/\%Y")) &
+      timeDate("1995-12-31",format = "\%Y-\%m-\%d")) &
         (seriesPositions(sp500.nreturns) < 
-            timeDate("01/01/2004",format = "\%m/\%d/\%Y"));
+            timeDate("2004-01-01",format = "\%Y-\%m-\%d"));
 sp500.nreturns <- sp500.nreturns[window];
 #The following functions are contained in functionsHawkes.R. 
 #Plot the 100 largest exceedances. Create an MPP (marked point process) class 

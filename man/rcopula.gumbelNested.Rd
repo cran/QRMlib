@@ -23,11 +23,10 @@ d-1) ordered by increasing size
 matrix of dimension n by d where rows are realizations 
 }
 \details{
-see page 226 of QRM for trivial thrivariate example 
+see page 226 of QRM for trivial tri-variate example 
 }
 \seealso{
    \code{\link{rAC}},
-   \code{\link{rcopula.AGumbel}},
    \code{\link{rcopula.Gumbel2Gp}}
 }
 \examples{

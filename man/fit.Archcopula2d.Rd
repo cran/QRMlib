@@ -4,14 +4,15 @@
   Fit 2D Archimedean Copula 
 }
 \description{
-fits two-dimensional Archimedean copula by maximum likelihood 
+Fits two-dimensional Archimedean copula by maximum likelihood.
+This function has been deprecated.  Use fit.AC() instead. 
 }
 \usage{
-fit.Archcopula2d(data, name)
+fit.Archcopula2d(Udata, name)
 }
 \arguments{
-\item{data}{
-matrix of copula data with two columns taking values in unit interval 
+\item{Udata}{
+Matrix of copula data with two columns taking values in unit interval (hence Udata). 
 }
 \item{name}{
 name of Archimedean copula: "clayton", "gumbel" 
@@ -31,14 +32,14 @@ see pages 234-236 of QRM
 \examples{
 data(ftse100);
 data(smi);
-TS1 <- cut(ftse100, "1990-11-08", "2004-03-25");
+TS1 <- window(ftse100, "1990-11-09", "2004-03-25");
 TS1Augment <- alignDailySeries(TS1, method="before");
 TS2Augment <- alignDailySeries(smi, method="before");
 INDEXES.RAW <- merge(TS1Augment,TS2Augment);
 #Cleanup:
 rm(TS1, TS1Augment, TS2Augment);
 INDEXES <- mk.returns(INDEXES.RAW);
-PARTIALINDEXES <- cut(INDEXES, "1993-12-31", "2003-12-31");
+PARTIALINDEXES <- window(INDEXES, "1994-01-01", "2003-12-31");
 #Now create a data matrix from the just-created timeSeries 
 data <- seriesData(PARTIALINDEXES);
 #Keep only the data items which are non-zero for both smi and ftse100
@@ -47,13 +48,11 @@ data <- data[data[,1]!=0 & data[,2] !=0,];
 #when applying to columns and 1 applied to rows. Hence this says to
 #apply the 'edf()' empirical distribtion function() to the columns
 #of the data. 
-Udata <- apply(data,2,edf,adjust=1);
+Udata <- apply(data,2,edf,adjust=TRUE);
 #Fit 2-dimensional Archimedian copula: choices are gumbel or clayton
 #using pseudo data generated via edf() from observed data:
 mod.gumbel <- fit.Archcopula2d(Udata,"gumbel");
-\dontrun{
 mod.clayton <- fit.Archcopula2d(Udata,"clayton");
-}
 }
 \keyword{methods}
 

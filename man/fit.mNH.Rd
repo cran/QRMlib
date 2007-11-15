@@ -7,12 +7,12 @@
 fits multivariate NIG or hyperbolic distribution using variant of EM algorithm 
 }
 \usage{
-fit.mNH(data=data.hyp.5d, symmetric=FALSE, case="NIG", 
+fit.mNH(data, symmetric=FALSE, case="NIG", 
      kvalue=NA, nit=2000, tol=1e-10)
 }
 \arguments{
 \item{data}{
-matrix of data where rows are vector observations 
+matrix of data where rows are vector observations; common example is data.hyp.5d 
 }
 \item{symmetric}{
 whether symmetric case should be fitted; default is FALSE 
@@ -55,15 +55,6 @@ selection1 <- c("AXP","EK","BA","C","KO","MSFT",
 DJ30daily <- Ret.DJ[sample1,selection1]; 
 DJ30weekly <- aggregateWeeklySeries(DJ30daily, FUNC= colSums);
 mod.NIG <- fit.mNH(DJ30weekly,symmetric=FALSE,case="NIG"); 
-\dontrun{
-mod.GAUSS <- fit.norm(DJ30weekly);
-mod.HYP <- fit.mNH(DJ30weekly,symmetric=FALSE,case="hyp"); 
-mod.t <- fit.mst(DJ30weekly); 
-mod.NIGs <- fit.mNH(DJ30weekly,symmetric=TRUE,case="NIG"); 
-mod.HYPs <- fit.mNH(DJ30weekly,symmetric=TRUE,case="hyp"); 
-round(c(mod.GAUSS$ll.max,mod.t$ll.max,mod.NIGs$ll.max,
-    mod.HYPs$ll.max,mod.NIG$ll.max,mod.HYP$ll.max),1); 
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{methods}

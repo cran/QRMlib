@@ -11,7 +11,7 @@ MEplot(data, omit = 3, labels=TRUE, ...)
 }
 \arguments{
 \item{data}{
-data vector or time series 
+data vector or Data slot from a time series (e.g tS@Data); do not pass entire timeSeries
 }
 \item{omit}{
 number of upper plotting points to be omitted  
@@ -38,6 +38,6 @@ excesses, these may be omitted for a prettier plot.
 \examples{
 # Sample mean excess plot of heavy-tailed Danish fire insurance data
 data(danish);
-MEplot(danish); 
+MEplot(data=danish@Data); 
 }
 \keyword{hplot}

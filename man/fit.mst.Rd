@@ -7,11 +7,13 @@
 fits multivariate Student's t distribution using variant of EM algorithm 
 }
 \usage{
-fit.mst(data=data.t.5d, nit=2000, tol=1e-10)
+fit.mst(data, nit=2000, tol=1e-10)
 }
 \arguments{
 \item{data}{
-matrix of data where rows are vector observations 
+matrix of data where rows are vector observations.  A good choice
+might be data.t.5d =
+rmghyp(n,lambda=(-nu/2),chi=nu,psi=0,Sigma=P,mu=mu,gamma=gamma)
 }
 \item{nit}{
 number of iterations of EM-type algorithm 
@@ -43,15 +45,6 @@ selection1 <- c("AXP","EK","BA","C","KO","MSFT",
 DJ30daily <- Ret.DJ[sample1,selection1]; 
 DJ30weekly <-  aggregateWeeklySeries(DJ30daily, FUNC= colSums); 
 mod.t <- fit.mst(DJ30weekly);
-\dontrun{
-mod.GAUSS <- fit.norm(DJ30weekly);
-mod.NIG <- fit.mNH(DJ30weekly,symmetric=FALSE,case="NIG"); 
-mod.HYP <- fit.mNH(DJ30weekly,symmetric=FALSE,case="hyp"); 
-mod.NIGs <- fit.mNH(DJ30weekly,symmetric=TRUE,case="NIG"); 
-mod.HYPs <- fit.mNH(DJ30weekly,symmetric=TRUE,case="hyp"); 
-round(c(mod.GAUSS$ll.max,mod.t$ll.max,mod.NIGs$ll.max,
-    mod.HYPs$ll.max,mod.NIG$ll.max,mod.HYP$ll.max),1); 
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{methods}

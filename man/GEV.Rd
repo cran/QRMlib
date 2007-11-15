@@ -53,13 +53,10 @@ location parameter sigma)
    \code{\link{pGPD}}
 }
 \examples{
-\dontrun{
-#Build a loglikelihood function for MLE which can be called from optim() in fit.GEV()
-negloglik <- function(theta)
-{
-  -sum(dGEV(excesses.nl,theta[1],abs(theta[2]),logvalue=TRUE));
-}
-}
+#Compare cdf of GEV to that of Gumbel when xi = 0 with location parameter 1 and scale 2.5
+quantValue <- 4.5;
+pG <- pGEV(q=quantValue, xi=0, mu=1.0, sigma=2.5) 
+pg <- pGumbel(q=quantValue, mu=1.0, sigma=2.5);
 }
 \keyword{distribution}
 

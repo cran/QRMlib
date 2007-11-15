@@ -84,9 +84,7 @@ See p. 80 of QRM for details.
    \code{\link{dmnorm}}
 }
 \examples{
-\dontrun{
-Sigma <- diag(c(3,4,5)) \%*\% equicorr(3,0.6) 
-         \%*\% diag(c(3,4,5)); 
+Sigma <- diag(c(3,4,5)) \%*\% equicorr(3,0.6) \%*\% diag(c(3,4,5)); 
 mu <- c(1,2,3); 
 ghdata <- rmghyp(n=1000,lambda=0.5,chi=1,psi=1,Sigma,mu); 
 ### (Multivariate generalized) Hyperbolic distribution: visualization with 
@@ -102,8 +100,7 @@ BiDensPlot(func=dmghyp,xpts=ll,ypts=ll,mu=c(0,0),
            Sigma=equicorr(2,-0.7),lambda=1,chi=1,psi=1,gamma=c(0.5,-0.5));
 BiDensPlot(func=dmghyp,type="contour",xpts=ll,ypts=ll,mu=c(0,0),
            Sigma=equicorr(2,-0.7),lambda=1,chi=1,psi=1,gamma=c(0.5,-0.5));
-par(mfrow=c(1,1)
-}
+par(mfrow=c(1,1));
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{distribution}

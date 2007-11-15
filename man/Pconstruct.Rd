@@ -29,10 +29,9 @@ see page 235 in QRM
 }
 \examples{
 P <- Pconstruct(c(1,2,3,4,5,6)); 
-\dontrun{
 eigen(P); 
 Pdeconstruct(P); 
-}
+
 }
 \keyword{array}
 

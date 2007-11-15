@@ -25,8 +25,6 @@ fit.POT(PP, markdens = "GPD")
   \item{ll.max}{logliklihood maximum}
 }
 \references{see pages 301-305 of QRM }
-
-}
 \seealso{
    \code{\link{fit.GPD}},
    \code{\link{extremalPP}}
@@ -39,9 +37,6 @@ window <- (seriesPositions(sp500.nreturns) >
 sp500.nreturns <- sp500.nreturns[window];
 tmp <- extremalPP(sp500.nreturns,ne=100); 
 mod1 <- fit.POT(tmp); 
-\dontrun{
-mod1b <- fit.POT(unmark(tmp)); 
-}
 }
 \keyword{methods}
 

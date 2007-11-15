@@ -42,7 +42,6 @@ sigma <- 0.2*10000/sqrt(250);
 #Now look at Expected Shortfall for student t with 4 degrees of freedom:
 ES.t4 <- ESst(p,4,sigma=sigma,scale=TRUE);
 ESst(c(0.95,0.99),4);
-} 
 }
 \keyword{distribution}
 

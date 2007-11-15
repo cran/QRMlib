@@ -33,9 +33,8 @@ first returned value is default probability estimate; second value is estimate o
    \code{\link{fit.binomialProbitnorm}}
 }
 \examples{
-\dontrun{
 #MODEL RISK See especially Section 8.4.6 on p. 364 of QRM book
-spdata.raw;
+data(spdata.raw);
 attach(spdata.raw);
 #momest() is an internal function in functionsCredit.R to 
 #calculate moment estimators for default probabilities. The first 
@@ -50,7 +49,6 @@ momest(Bdefaults,Bobligors);
 pi.B <- momest(Bdefaults, Bobligors)[1];  #one obligor defaulting pi = .04896
 #second value returned is probability of joint default probability for two firms.
 pi2.B <- momest(Bdefaults, Bobligors)[2]; #two obligors defaulting jointly pi2 = .0031265
-}
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{htest}
