@@ -146,7 +146,24 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-extern inline
+/* Changes in GCC 4.2 and 4.3 relative to GCC 3.1 compiler:
+*When compiling with -std=c99 or -std=gnu99, the extern inline keywords changes meaning. 
+*GCC 4.3 conforms to the ISO C99 specification, where extern inline is very different 
+*thing than the GNU extern inline extension. For the following code compiled with -std=c99, 
+*extern inline int
+*foo()
+*{ return 5; }
+*will result in a function definition for foo being emitted [produced] in the subsequent 
+*object file, whereas previously there was none. As a result, files that use this extension 
+*and compile in the C99 dialect will see many errors of the form: 
+*       multiple definition of `foo'
+*first defined here.
+*To correct this error in GCC 4.2 and 4.3, we can add the following attribute:
+*  __attribute__((__gnu_inline__)) 
+* after extern inline to return to the old desired behavior.
+*/
+/* add __attribute__((__gnu_inline__)) after "extern inline" to get old behaviour: */
+extern inline __attribute__((__gnu_inline__))
 int gsl_sf_exp_e(const double x, gsl_sf_result * result)
 {
   if(x > GSL_LOG_DBL_MAX) {

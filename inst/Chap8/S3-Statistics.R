@@ -71,15 +71,27 @@ c(mod0$maxloglik, mod1$maxloglik, mod2$maxloglik, mod3$maxloglik);
 # R-methodology
 library(MASS);
 library(nlme);
-#show the data being used: It is spdata rather than spdata.raw.
-spdata;
 #the data being used is spdata which has 100 rows and 4 columns: 
 #'year', 'rating', 'firms', defaults'
 #Use R- library MASS to get glmmPQL
 #'year' -'ratings' determine the unique results(20 years 1981-2000 
 # with 5 obligor class ratings each year
+#show the data being used: It is spdata rather than spdata.raw.
+spdata;
+#If using timeSeries, we must do this:
+ratingval <- spdata@recordIDs$rating;
+yearval <- as.numeric(spdata@recordIDs$DATE);
+results <- glmmPQL(cbind(defaults,firms-defaults) ~ -1 + ratingval, 
+     random = ~1| yearval, family=binomial(probit), data=spdata);
+results;
+summary(results);
+summary(results)$tTable[,1];
+
+
+#Alternatively, use data.frame data.  This is easier.
+data(spdata.df);
 results <- glmmPQL(cbind(defaults,firms-defaults) ~ -1 + rating, 
-  random = ~1| year, family=binomial(probit), data=spdata);
+  random = ~1| year, family=binomial(probit), data=spdata.df);
 summary(results);
 summary(results)$tTable[,1];
 

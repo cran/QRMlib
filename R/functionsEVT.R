@@ -1,8 +1,9 @@
-# QRMlib: version 1.4.2
+# QRMlib: version 1.4.3
+# modifies QRMlib 1.4.2 to correct parameter order in fit.GEV 
 # this file is a component of QRMlib 
 
-# Copyright (C) 2005-07 Alexander McNeil 
-# R-language additions Copyright (C) 2006-2007 Scott Ulman
+# Copyright (C) 2005-08 Alexander McNeil 
+# R-language additions Copyright (C) 2006-2008 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -164,9 +165,15 @@ fit.GEV <- function(maxima)
     out <- list(par.ests = par.ests, par.ses = par.ses, varcov = varcov, converged = 
     #10/5/2007: passed additional 2nd parameter to -negloglik()
     converged, llmax = -negloglik(par.ests,maxima));
-    names(out$par.ests) <- c("xi", "sigma", "mu");
-    names(out$par.ses) <- c("xi", "sigma", "mu");
-    out
+    #06/30/2008: the order of the names is incorrect; note that the parameter vector theta 
+    #(passed to the optimization function) has the order c(xi0, mu0, sigma0); the order of 
+    #the return parameters should be identical;
+    #hence we need to make the following correction to maintain the same order
+    #names(out$par.ests) <- c("xi", "sigma", "mu");
+    #names(out$par.ses) <- c("xi", "sigma", "mu");
+    names(out$par.ests) <- c("xi", "mu", "sigma");
+    names(out$par.ses) <- c("xi", "mu", "sigma");
+    out;
   }
 
 ##############################################################################

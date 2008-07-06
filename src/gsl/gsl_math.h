@@ -135,47 +135,64 @@ __BEGIN_DECLS
 double gsl_max (double a, double b);
 double gsl_min (double a, double b);
 
+/* Changes in GCC 4.2 and 4.3 relative to GCC 3.1 compiler:
+*When compiling with -std=c99 or -std=gnu99, the extern inline keywords changes meaning. 
+*GCC 4.3 conforms to the ISO C99 specification, where extern inline is very different 
+*thing than the GNU extern inline extension. For the following code compiled with -std=c99, 
+*extern inline int
+*foo()
+*{ return 5; }
+*will result in a function definition for foo being emitted [produced] in the subsequent 
+*object file, whereas previously there was none. As a result, files that use this extension 
+*and compile in the C99 dialect will see many errors of the form: 
+*       multiple definition of `foo'
+*first defined here.
+*To correct this error in GCC 4.2 and 4.3, we can add the following attribute:
+*  __attribute__((__gnu_inline__)) 
+* after extern inline to return to the old desired behavior.
+*/
 /* inline-friendly strongly typed versions */
+
 #ifdef HAVE_INLINE
+/* add __attribute__((__gnu_inline__)) after "extern inline" to get old behaviour: */
+extern inline __attribute__((__gnu_inline__)) int GSL_MAX_INT (int a, int b);
+extern inline __attribute__((__gnu_inline__)) int GSL_MIN_INT (int a, int b);
+extern inline __attribute__((__gnu_inline__)) double GSL_MAX_DBL (double a, double b);
+extern inline __attribute__((__gnu_inline__)) double GSL_MIN_DBL (double a, double b);
+extern inline __attribute__((__gnu_inline__)) long double GSL_MAX_LDBL (long double a, long double b);
+extern inline __attribute__((__gnu_inline__)) long double GSL_MIN_LDBL (long double a, long double b);
 
-extern inline int GSL_MAX_INT (int a, int b);
-extern inline int GSL_MIN_INT (int a, int b);
-extern inline double GSL_MAX_DBL (double a, double b);
-extern inline double GSL_MIN_DBL (double a, double b);
-extern inline long double GSL_MAX_LDBL (long double a, long double b);
-extern inline long double GSL_MIN_LDBL (long double a, long double b);
-
-extern inline int
+extern inline __attribute__((__gnu_inline__)) int
 GSL_MAX_INT (int a, int b)
 {
   return GSL_MAX (a, b);
 }
 
-extern inline int
+extern inline __attribute__((__gnu_inline__)) int
 GSL_MIN_INT (int a, int b)
 {
   return GSL_MIN (a, b);
 }
 
-extern inline double
+extern inline __attribute__((__gnu_inline__)) double
 GSL_MAX_DBL (double a, double b)
 {
   return GSL_MAX (a, b);
 }
 
-extern inline double
+extern inline __attribute__((__gnu_inline__)) double
 GSL_MIN_DBL (double a, double b)
 {
   return GSL_MIN (a, b);
 }
 
-extern inline long double
+extern inline long __attribute__((__gnu_inline__)) double
 GSL_MAX_LDBL (long double a, long double b)
 {
   return GSL_MAX (a, b);
 }
 
-extern inline long double
+extern inline __attribute__((__gnu_inline__)) long double
 GSL_MIN_LDBL (long double a, long double b)
 {
   return GSL_MIN (a, b);

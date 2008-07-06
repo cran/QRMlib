@@ -1,8 +1,12 @@
-# QRMlib: version 1.4.2
-# this file is a component of QRMlib 
+# QRMlib: version 1.4.3
+# modifies QRMlib 1.4.2 to change calls to timeDate objects.
+# RMetrics changed the definition of timeDate class in June 2008, removing
+# the 'Dim' slot.  Hence all calls with timeDate@Dim must be replaced
+# with length(timeDate). 
+# This file is a component of QRMlib 
 
 # Copyright (C) 2006 Alexander McNeil 
-# R-language additions Copyright (C) 2006-2007 Scott Ulman
+# R-language additions Copyright (C) 2006-2008 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -32,8 +36,8 @@
 
 .on.attach <- function()
 {
-  cat("QRMlib v1.4.2, Copyright (C) 2005-2006 Alexander McNeil \n");
-  cat("R-language modifications Copyright (C) 2006-2007 Scott Ulman \n");
+  cat("QRMlib v1.4.3, Copyright (C) 2005-2008 Alexander McNeil \n");
+  cat("R-language modifications Copyright (C) 2006-2008 Scott Ulman \n");
 }
 
 ############################################################
@@ -387,7 +391,9 @@ signalSeries <- function(data, positions., units, units.position, from = 1, by =
 #############################################################
 #SU: R-language special function to aggregate daily/weekly timeSeries objects in R
 # into Quarterly timeSeries objects.  Works with fCalendar 240.10068 in R-2.5.0 and
-# with fSeries 270.62 in R-2.6.0.
+# with fSeries 270.62 in R-2.6.0. Changes have now been made to work with fCalendar
+# 270.75 where RMetrics changed the definition of the class timeDate, dropping the
+#'Dim' slot in R-2.8.0
 #**********WARNING***************
 #This function has not been extensively tested with daily series which don't start in January
 #*********************************
@@ -443,7 +449,7 @@ aggregateQuarterlySeries <- function(timeseries,FUNC=colSums)
   toForTo <- timeLastDayInQuarter(charvecLastDate);
   #Build the ending dates for each quarter by using timeSequence(). Note these will need 
   #adjusting since there aren't an equal number of days in each quarter.
-  #build to <- timeSequence()
+  #build to <- timeSequence()which is a vector of timeDate objects
   to <- timeSequence(from=fromForTo, to=toForTo, by="quarter", format="%Y-%m-%d", FinCenter = "GMT");
   #We now have an equally-spaced sequence like this which we need to clean up.  The months are supposed to be those of
   #the quarters {3,6,9,12} and the days are supposed to be the corresponding last days of the month
@@ -454,13 +460,16 @@ aggregateQuarterlySeries <- function(timeseries,FUNC=colSums)
   #[22] [1999-07-01] [1999-10-01] [1999-12-31] [2000-03-31] [2000-07-01] [2000-10-01] [2000-12-31]
   #[29] [2001-03-31] [2001-07-01] [2001-10-01] [2001-12-31] [2002-03-31] [2002-07-01] [2002-10-01]
   #[36] [2002-12-31] [2003-03-31] [2003-07-01] [2003-10-01] [2003-12-31] [2004-03-31]
-  quartersLength <- to@Dim; #how many quarters in resulting timeSequence?
+  #The following call works for the timeDate object "to" for fCalendar 260.72 which has a "Dim" slot
+  #quartersLength <- to@Dim; #how many quarters in resulting timeSequence?
+  #6/30/2008. With release of fCalendar 270.75 in June 2008, RMetrics changed the definition of timeDate object, 
+  #dropping "Dim" slot. Hence we need to substitute the following instruction:
+  quartersLength <- length(to);
 
   ltest <- strptime(to@Data[1],"%Y-%m-%d");
   startQtr <- calcQtrFromMonth(ltest$mon); #which quarter (1,2,3,4) did we start in?
   
-
-#Start to build the monthVector; it will have 4 items if we started in qtr 1, 3 if in qtr 2, etc.
+  #Start to build the monthVector; it will have 4 items if we started in qtr 1, 3 if in qtr 2, etc.
   monthVector <- switch(startQtr,qtrCloseMonths, c(5,8,11), c(8,11), 11);
   lastDayVector <- switch(startQtr,qtrCloseDays, c(30,30,31), c(30,31), 31);
   remainingQtrs <- quartersLength - length(monthVector);
@@ -485,7 +494,6 @@ aggregateQuarterlySeries <- function(timeseries,FUNC=colSums)
   #Reset the data:
   to@Data[] <- ltest;
 
-
   #Now set the 'from <- timeSequence() values:
   fromForFrom <- timeFirstDayInQuarter(charvecStartDate); 
   toForFrom <- timeFirstDayInQuarter(charvecLastDate);
@@ -500,7 +508,9 @@ aggregateQuarterlySeries <- function(timeseries,FUNC=colSums)
 ############################################################################
 #SU: R-language special function to aggregate daily/weekly timeSeries objects in R
 # into Monthly timeSeries objects.  Works with fCalendar 240.10068 in R-2.5.0 and
-# with fSeries 270.62 in R-2.6.0.
+# with fSeries 270.62 in R-2.6.0. Changes have now been made to work with fCalendar
+# 270.75 where RMetrics changed the definition of the class timeDate, dropping the
+#'Dim' slot in R-2.8.0
 #**********WARNING***************
 #This function has not been extensively tested with daily series which don't start in January
 #*********************************
@@ -552,13 +562,18 @@ aggregateMonthlySeries <- function(timeseries,FUNC=colSums)
 
   test3 <- as.character(timeLastDayInMonth(charvecStartDate));
   test4 <- as.character(timeLastDayInMonth(charvecLastDate));
-  #Use the new version of timeSequence() from fCalendar 240.10068 and pass by="quarter":
+  #Use the new version of timeSequence() from fCalendar 240.10068 and pass by="month":
   to3 = timeSequence(from = test3, to=test4, by="month", format=dateFormat);
 
-  #We now have two vectors of equal length, 'to3' and 'from3'. Unfortunately, dates in the'to3' 
+  #We now have two vectors of timeDates of equal length, 'to3' and 'from3'. Unfortunately, dates in the'to3' 
   #vector are equally spaced in numbers of days. Since all months do not have the same number
   #of days, the sequence has been created to move ahead into the next month. 
-  monthsLength <- to3@Dim; #how many elements in each timeSequence?
+  #6/30/2008. The following call works for the timeDate object "to3" for fCalendar 260.72 which has a "Dim" slot
+  #monthsLength <- to3@Dim; #how many elements in each timeSequence?
+  #With release of fCalendar 270.75 in June 2008, RMetrics changed the definition of timeDate object, 
+  #dropping "Dim" slot. Hence we need to substitute the following instruction:
+  monthsLength <- length(to3); #how many elements in each timeSequence?
+
   repetitions <- as.integer(monthsLength/12); #how many times to replicate the vector
   remainder <- monthsLength - 12*repetitions; #how many extra months of a year do we need to process for a fraction of a year?
  
@@ -620,7 +635,9 @@ aggregateMonthlySeries <- function(timeseries,FUNC=colSums)
 ############################################################################
 #SU: R-language function to aggregate daily timeSeries objects in R
 # into weekly timeSeries objects. Works with fCalendar 240.10068 in R-2.5.0 and
-# with fSeries 270.62 in R-2.6.0.
+# with fSeries 270.62 in R-2.6.0. Changes have now been made to work with fCalendar
+# 270.75 where RMetrics changed the definition of the class timeDate, dropping the
+#'Dim' slot in R-2.8.0
 #This function aggregates the returns from a daily 'timeseries' into weekly returns.
 #  PARAMETERS:
 #  	1) timeseries: 
@@ -640,9 +657,9 @@ aggregateWeeklySeries <- function(timeseries,FUNC=colSums)
     #1, then we have a daily time series:
     for (n in 1:4)
     {
-     #Get difference in days between successive observations:
+     #Get difference in days between successive observations: added units = "days" in v1.4.4
      diff <- difftimeDate(timeDate(timeseries@positions[n+1]),
-          timeDate(timeseries@positions[n]));
+          timeDate(timeseries@positions[n]), units = "days");
      if(diff == 1) return(TRUE)
      #else next
     }
@@ -708,8 +725,13 @@ aggregateWeeklySeries <- function(timeseries,FUNC=colSums)
   #Get difference in days between last item in 'to' vector and last item
   #in total timeseries successive observations. The 'to' vector contains timeDate objects.
   #This rectifies case where the last item created in timeSequence() is 12/22/2000 and
-  #last item in total time series is 12/31/2000 so we could have an additional week ending 12/29/200
-  diff <- difftimeDate(timeDate(timeseries@positions[tsLength]),to[to@Dim]);
+  #last item in total time series is 12/31/2000 so we could have an additional week ending 12/29/2000.
+  #Added added units = "days" in v1.4.4.
+  #The following call works for the timeDate object "to" for fCalendar 260.72 which has a "Dim" slot
+  #diff <- difftimeDate(timeDate(timeseries@positions[tsLength]),to[to@Dim]);
+  #With release of fCalendar 270.75 in June 2008, RMetrics changed the definition of timeDate object, 
+  #dropping "Dim" slot. Hence we need to substitute the length() fn. Also added added units = "days" in v1.4.3.
+  diff <- difftimeDate(timeDate(timeseries@positions[tsLength]),to[length(to)], units = "days");
   if(diff >= 7)
   {
     nweeks <- nweeks + 1;

@@ -16,14 +16,14 @@ A separate S-Plus version of the library can be downloaded from Alexander McNeil
 \tabular{ll}{
 Package: \tab QRMlib\cr
 Type: \tab Package\cr
-Version: \tab 1.4.2\cr
-Date: \tab 2007-11-15\cr
-Depends: \tab R(>= 2.6.0), methods, fSeries, mvtnorm, chron\cr
+Version: \tab 1.4.3\cr
+Date: \tab 2008-07-06\cr
+Depends: \tab R(>= 2.7.0), methods, fSeries, mvtnorm, chron\cr
 Suggests: its,Hmisc
 License: \tab GPL version 2 or newer\cr
 URL: \tab http://www.ma.hw.ac.uk/\eqn{\sim}{~}mcneil/book/index.html\cr
-Packaged: \tab November 15, 2007\cr
-Built: \tab R 2.6.0; i386-pc-mingw32; 2007-10-10 12:00:00; windows\cr
+Packaged: \tab July 07, 2008\cr
+Built: \tab R 2.8.0dev; i386-pc-mingw32; 2008-07-07 12:00:00; windows\cr
 }
 The package provides an entire library of methods to investigate concepts associated
 with QRM, including Market Risk, Credit Risk, and Operational Risk, as developed

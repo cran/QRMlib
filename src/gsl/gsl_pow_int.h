@@ -32,24 +32,43 @@
 
 __BEGIN_DECLS
 
-#ifdef HAVE_INLINE
-extern inline double gsl_pow_2(const double x);
-extern inline double gsl_pow_3(const double x);
-extern inline double gsl_pow_4(const double x);
-extern inline double gsl_pow_5(const double x);
-extern inline double gsl_pow_6(const double x);
-extern inline double gsl_pow_7(const double x);
-extern inline double gsl_pow_8(const double x);
-extern inline double gsl_pow_9(const double x);
+/* Changes in GCC 4.2 and 4.3 relative to GCC 3.1 compiler:
+*When compiling with -std=c99 or -std=gnu99, the extern inline keywords changes meaning. 
+*GCC 4.3 conforms to the ISO C99 specification, where extern inline is very different 
+*thing than the GNU extern inline extension. For the following code compiled with -std=c99, 
+*extern inline int
+*foo()
+*{ return 5; }
+*will result in a function definition for foo being emitted [produced] in the subsequent 
+*object file, whereas previously there was none. As a result, files that use this extension 
+*and compile in the C99 dialect will see many errors of the form: 
+*       multiple definition of `foo'
+*first defined here.
+*To correct this error in GCC 4.2 and 4.3, we can add the following attribute:
+*  __attribute__((__gnu_inline__)) 
+* after extern inline to return to the old desired behavior.
+*/
 
-extern inline double gsl_pow_2(const double x) { return x*x;   }
-extern inline double gsl_pow_3(const double x) { return x*x*x; }
-extern inline double gsl_pow_4(const double x) { double x2 = x*x;   return x2*x2;    }
-extern inline double gsl_pow_5(const double x) { double x2 = x*x;   return x2*x2*x;  }
-extern inline double gsl_pow_6(const double x) { double x2 = x*x;   return x2*x2*x2; }
-extern inline double gsl_pow_7(const double x) { double x3 = x*x*x; return x3*x3*x;  }
-extern inline double gsl_pow_8(const double x) { double x2 = x*x;   double x4 = x2*x2; return x4*x4; }
-extern inline double gsl_pow_9(const double x) { double x3 = x*x*x; return x3*x3*x3; }
+
+#ifdef HAVE_INLINE
+/* add __attribute__((__gnu_inline__)) after "extern inline" to get old behaviour: */
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_2(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_3(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_4(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_5(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_6(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_7(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_8(const double x);
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_9(const double x);
+
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_2(const double x) { return x*x;   }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_3(const double x) { return x*x*x; }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_4(const double x) { double x2 = x*x;   return x2*x2;    }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_5(const double x) { double x2 = x*x;   return x2*x2*x;  }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_6(const double x) { double x2 = x*x;   return x2*x2*x2; }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_7(const double x) { double x3 = x*x*x; return x3*x3*x;  }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_8(const double x) { double x2 = x*x;   double x4 = x2*x2; return x4*x4; }
+extern inline __attribute__((__gnu_inline__)) double gsl_pow_9(const double x) { double x3 = x*x*x; return x3*x3*x3; }
 #else
 double gsl_pow_2(const double x);
 double gsl_pow_3(const double x);

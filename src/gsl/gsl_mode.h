@@ -66,10 +66,28 @@ typedef unsigned int gsl_mode_t;
 #define GSL_PREC_SINGLE  1
 #define GSL_PREC_APPROX  2
 
-#ifdef HAVE_INLINE
-extern inline unsigned int GSL_MODE_PREC(gsl_mode_t mt);
+/* Changes in GCC 4.2 and 4.3 relative to GCC 3.1 compiler:
+*When compiling with -std=c99 or -std=gnu99, the extern inline keywords changes meaning. 
+*GCC 4.3 conforms to the ISO C99 specification, where extern inline is very different 
+*thing than the GNU extern inline extension. For the following code compiled with -std=c99, 
+*extern inline int
+*foo()
+*{ return 5; }
+*will result in a function definition for foo being emitted [produced] in the subsequent 
+*object file, whereas previously there was none. As a result, files that use this extension 
+*and compile in the C99 dialect will see many errors of the form: 
+*       multiple definition of `foo'
+*first defined here.
+*To correct this error in GCC 4.2 and 4.3, we can add the following attribute:
+*  __attribute__((__gnu_inline__)) 
+* after extern inline to return to the old desired behavior.
+*/
 
-extern inline unsigned int
+#ifdef HAVE_INLINE
+/* add __attribute__((__gnu_inline__)) after "extern inline" to get old behaviour: */
+extern inline __attribute__((__gnu_inline__)) unsigned int GSL_MODE_PREC(gsl_mode_t mt);
+
+extern inline __attribute__((__gnu_inline__)) unsigned int
 GSL_MODE_PREC(gsl_mode_t mt)
 { return  (mt & (unsigned int)7); }
 #else  /* HAVE_INLINE */
