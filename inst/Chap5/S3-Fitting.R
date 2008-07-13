@@ -1,6 +1,6 @@
 # S-Plus script developed by Professor Alexander McNeil, A.J.McNeil@hw.ac.uk
 # R-version adapted by Scott Ulman (scottulman@hotmail.com)
-# QRMlib 1.4.2
+# QRMlib 1.4.4
 # This free script using QRMLib is distributed in the hope that it will be useful, 
 # but WITHOUT ANY WARRANTY; without even the implied warranty of 
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
@@ -192,3 +192,4 @@ mod.t;
 Pstar <- Spearman(UdataFX);
 Pstar;
 sum(dcopula.gauss(UdataFX,Pstar,logvalue=TRUE));
+Pstar;

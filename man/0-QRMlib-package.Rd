@@ -16,8 +16,8 @@ A separate S-Plus version of the library can be downloaded from Alexander McNeil
 \tabular{ll}{
 Package: \tab QRMlib\cr
 Type: \tab Package\cr
-Version: \tab 1.4.3\cr
-Date: \tab 2008-07-06\cr
+Version: \tab 1.4.4\cr
+Date: \tab 2008-07-14\cr
 Depends: \tab R(>= 2.7.0), methods, fSeries, mvtnorm, chron\cr
 Suggests: its,Hmisc
 License: \tab GPL version 2 or newer\cr

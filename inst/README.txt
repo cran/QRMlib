@@ -1,5 +1,5 @@
-QRMlib library: version 1.4.3
-Copyright (C) 2005-2006 Alexander McNeil
+QRMlib library: version 1.4.4
+Copyright (C) 2005-2008 Alexander McNeil
 R-language modifications copyright (C) 2006-2008 by Scott Ulman.
 
 This program contains R and C routines to accompany the book 
