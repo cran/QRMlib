@@ -31,8 +31,9 @@ Standard and Poors Credit Monitor
 }
 
 \examples{
-#Must attach MASS and nlme libraries to run mixed effect regression model
-library(MASS);
+#Must attach MASS and nlme libraries to run mixed effect regression model.
+#library(MASS) is attached by fSeries which is a dependency of QRMlib
+#and hence is already loaded
 library(nlme);
 #Load timeSeries:
 data(spdata); #timeSeries
@@ -48,7 +49,6 @@ results;
 summary(results);
 summary(results)$tTable[,1];
 detach("package:nlme");
-detach("package:MASS");
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{datasets}

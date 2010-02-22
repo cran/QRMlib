@@ -1,12 +1,12 @@
 #This is zzz.R.
 #This code should be executed immediately if a library(QRMlib) call is executed.
-.First.lib <- function(lib, pkg)
+.First.lib <- function(libname, pkgname)
 {
-  library.dynam("QRMlib", pkg, lib,file.ext = .Platform$dynlib.ext);
+  library.dynam("QRMlib", pkgname, libname, file.ext = .Platform$dynlib.ext);
 }
-
-.Last.lib <- function(lib, pkg)
+#The .Last.lib function has been altered from function(lib,pkg) to function(libpath)in R-2.10
+.Last.lib <- function(libpath)
 {
-  library.dynam.unload("QRMlib", pkg, lib,file.ext = .Platform$dynlib.ext);
-
+  #consequently the 2nd (pkg) parameter has been eliminated from library.dynam.unload():
+  library.dynam.unload("QRMlib",libpath,file.ext = .Platform$dynlib.ext);
 }

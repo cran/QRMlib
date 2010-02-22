@@ -1,8 +1,8 @@
-# QRMlib: version 1.4.2
+# QRMlib: version 1.4.5
 # this file is a component of QRMlib 
 
 # Copyright (C) 2005-07 Alexander McNeil
-# R-language additions Copyright (C) 2006-2007 Scott Ulman
+# R-language additions Copyright (C) 2006-2010 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -45,8 +45,9 @@ momest <- function(data, trials, limit = 10.)
 
 cal.probitnorm <-function(pi1 = 0.1837, pi2 = 0.0413)
 {
-       #In R, we must load the library which contains the function pmvnorm()
-       library(mvtnorm);
+       #In R, the library which contains the function pmvnorm() is mvtnorm which is a dependency
+       #of QRMlib. Hence it is automatically loaded and we don't need to reload it.
+       #library(mvtnorm);
 	rootfunc <- function(x, k1, k2)
 	{
              #Major difference between S-Plus and R in this call:
@@ -57,8 +58,8 @@ cal.probitnorm <-function(pi1 = 0.1837, pi2 = 0.0413)
 	}
 	out <- uniroot(rootfunc, c(0.0001, 0.999), k1 = pi1, k2 = pi2)
 	rho <- out$root
-       #In R, we must now unload the mvtnorm package we loaded:
-       detach("package:mvtnorm");
+       #In R, we no longer need to unload the mvtnorm package since it is a dependency of QRMlib:
+       #detach("package:mvtnorm");
 
 	mu <- qnorm(pi1)/sqrt(1 - rho)
 	sigma <- sqrt(rho)/sqrt(1 - rho)

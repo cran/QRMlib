@@ -26,16 +26,16 @@ vector of quantiles
 \item{p}{
 vector of probabilities 
 }
-\item{mu} {
+\item{mu}{
 location parameter of Gumbel distribution
 }
-\item{sigma} {
+\item{sigma}{
 scale parameter (sigma >= 0) of Gumbel distribution
 }
 \item{logvalue}{
 whether or not log values of density should be returned (useful for ML) 
 }
-\item{n} {
+\item{n}{
 number of values to simulate for random Gumbel
 }
 }

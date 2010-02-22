@@ -10,9 +10,6 @@ unmark(PP)
 \arguments{
   \item{PP}{a point process object of class PP}
 }
-\details{
-  ~~ If necessary, more details than the description above ~~
-}
 \value{
   ~Describe the value returned
   If it is a LIST, use

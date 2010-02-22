@@ -38,7 +38,8 @@ data(spdata.df);
 #the data being used is spdata.df which has 100 rows and 4 columns: 
 #'year', 'rating', 'firms', defaults'
 #Must attach MASS and nlme libraries to run mixed effect regression model
-library(MASS);
+#library(MASS) is attached by fSeries which is a dependency of QRMlib
+#and hence is already loaded
 library(nlme);
 #Use R- library MASS to get glmmPQL which runs a mixed-effects model. 
 #It will measure random effects and fixed effects.
@@ -51,7 +52,6 @@ summary(results);
 summary(results)$tTable[,1];
 rm(spdata.df);
 detach("package:nlme");
-detach("package:MASS");
 }
 \author{documentation by Scott Ulman for R-language distribution}
 \keyword{datasets}

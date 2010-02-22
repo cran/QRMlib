@@ -54,11 +54,11 @@ and choose \emph{All Files}.\cr
 (We are NOT saving as a .txt type.)\cr
 \cr
 6. Paste the path \cr
-\dQuote{C:\\Program Files\\R\\R-2.7.0\\users\\QRMBook\\.Rprofile} \cr
+\dQuote{C:\\Program Files\\R\\R-2.10.1\\users\\QRMBook\\.Rprofile} \cr
 into the File name box. Be sure to spell \emph{.Rprofile} 
 exactly as shown since R uses case sensitivity in opening files even 
-though Windows does not. Use R-2.8.0 or whatever higher version of
-R you are using in place of R-2.7.0 if necessary.\cr
+though Windows does not. Use R-2.10.0 or whatever higher version of
+R you are using in place of R-2.10.1 if necessary.\cr
 \cr
 7. Click the \emph{Save} button.\cr
 \cr

@@ -1,6 +1,6 @@
-QRMlib library: version 1.4.4
-Copyright (C) 2005-2008 Alexander McNeil
-R-language modifications copyright (C) 2006-2008 by Scott Ulman.
+QRMlib library: version 1.4.5
+Copyright (C) 2005-2009 Alexander McNeil
+R-language modifications copyright (C) 2006-2010 by Scott Ulman.
 
 This program contains R and C routines to accompany the book 
 Quantitative Risk Management: Concepts, Techniques and Tools.
@@ -23,26 +23,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 Contact: Scott Ulman:  scottulman@hotmail.com
 
+##Instructions for all R users:
+Be sure NOT to load the timeSeries and timeDate libraries when QRMlib
+is running.  If you already have one of those libraries loaded, run 
+      detach(package:timeSeries)
+      detach(package:timeDate)
+PRIOR to calling 
+      library(QRMlib).
+RMetrics previously built a timeSeries class within the fSeries library
+and a timeDate class within fCalendar library.  Recently, they rewrote the 
+two classes within timeSeries and timeDate libraries but maintained the
+old fSeries and fCalendar libraries for programs like QRMlib which 
+developed code based on the old class definitions.  However, if you load
+the new timeSeries library, it will MASK the old timeSeries class contained
+in fSeries and QRMlib functions will fail.
+
 ## Windows Instructions for R users:
 The following instructions pertain to a user with version 2.7.0 or higher 
 of R installed.  
 ************
 **** Creating a QRMBook Workspace (User) ***********
-In the following instructions, substitute whatever you fo
+In the following instructions, substitute whatever your path to R is for
+the version given below.
 1. Using MyComputer or Windows Explorer, create a QRMBook subfolder beneath 
-	C:\Program Files\R\R-2.7.0\Users. 
-(wherever your R Users folder resides).
+	C:\Program Files\R\R-2.10.1\Users. 
+(or wherever your R Users folder resides).
 2. Right-click the desktop and choose New | Shortcut from the menu.
 3. Copy the following line (including quotation marks) into your clipboard 
-"C:\Program Files\R\R-2.7.0\bin\Rgui.exe" 
+"C:\Program Files\R\R-2.10.1\bin\Rgui.exe" 
 and paste the line into the box labeled "Type the location of the item"
 4. Click the Next> button.
 5. Type 'QRMBook' (without any quotation marks) into the box labeled "Type
 a name of this shortcut".  Then click the Finish button.
 6. Find the shortcut labeled "QRMBook" on your desktop,right-click the icon,
 and choose 'Properties'.
-7. The 'Start in' box says "C:\Program Files\R\R-2.7.0\bin".  Modify it to
-read "C:\Program Files\R\R-2.7.0\Users\QRMBook" (be sure to include the 
+7. The 'Start in' box says "C:\Program Files\R\R-2.10.1\bin".  Modify it to
+read "C:\Program Files\R\R-2.10.1\Users\QRMBook" (be sure to include the 
 quotation marks).  Then click OK.
 
 Generally, you may now open the program by double-clicking the QRMBook shortcut on
@@ -53,29 +69,29 @@ To avoid that step each time you open the shortcut, perform one of the following
 two actions.  Once you have finished either of these actions, you will not need
 to load the QRMlib into the workspace each time you start it.  
 i) Copy the file .Rprofile from the 
-	C:\Program Files\R\R-2.7.0\src\library\QRMlib\inst\Chap2
-folder (substitute your version of R for R-2.7.0 if necessary) into the new
-	C:\Program Files\R\R-2.7.0\Users\QRMBook
+	C:\Program Files\R\R-2.10.1\src\library\QRMlib\inst\Chap2
+folder (substitute your version of R for R-2.10.1 if necessary) into the new
+	C:\Program Files\R\R-2.10.1\Users\QRMBook
 folder your created in step 1 above; OR
 ii) Perform steps 1-7 in ..Creating an .Rprofile file... below
 
 After you have finished installing an .Rprofile file into your QRMBook folder, you
 can begin running scripts available for most of the chapters in the QRM book.
 You will find scripts which explain topics in each QRM Book chapter. The folders 
-are C:\Program Files\R\R-2.7.0\library\QRMlib\Chap2, ...\Chap3, etc.  You may open
+are C:\Program Files\R\R-2.10.1\library\QRMlib\Chap2, ...\Chap3, etc.  You may open
 these scripts by choosing File | Open Script within R, and then moving to the 
 appropriate Chapter script for the QRM Book.
 
 ###Insuring data availability ###########
 The scripts use data included with the installation.  The following data files are located at
-	C:\Program Files\R\R-2.6.0\library\QRMlib\data
+	C:\Program Files\R\R-2.10.1\library\QRMlib\data
 subfolder. If you examine that folder you may see the data files are compressed in a file
 named Rdata.zip.  You may extract the data into the folder if you wish to see the names of
 each separate data file by using WinZip or PKZip.  In versions of QRMlib prior to 1.4.2, 
 the data files included timeSeries classes within ASCII-readable files:
 cac40.R, danish.R, DJ.R, dji.R, ftse100.R, FXGBP.RAW.R, hsi.R, nasdaq.R, nikkei.R, smi.R,
 sp500.R, spdata.R, spdata.raw.R, and xdax.R.
-Recent changes by RMetrics to their timeSeries class (including moving it from the fCalendar
+Past changes by RMetrics to their timeSeries class (including moving it from the fCalendar
 package to the fSeries package) have required some substantive changes.  The new timeSeries
 files are no longer ASCII readable so they now appear in files named
 cac40.rda, danish.rda, DJ.rda, dji.rda, ftse100.rda, FXGBP.RAW.rda, hsi.rda, nasdaq.rda, 
@@ -106,8 +122,8 @@ subsequent data(filename) calls to get previously-loaded data.  If you do not sa
 workspace, you must execute data(filename) each time you open the QRMBook workspace.
 
 
-####Creating an .Rprofile file in "C:\Program Files\R\R-2.7.0\users\QRMBook"#######
-#If you are using a later version of R like 2.8.0, replace 2.7.0 with 2.8.0 (or
+####Creating an .Rprofile file in "C:\Program Files\R\R-2.10.1\users\QRMBook"#######
+#If you are using an earlier (or later) version of R like 2.9.1, replace 2.10.1 with 2.9.1 (or
 #whatever version you are using).
 1. Copy the next twelve lines of code (starting with # and ending with } into the clipboard.
 #This file uses .First and .Last functions rather than the 
@@ -131,7 +147,7 @@ with a capital R followed by all small letters.
 4. In Notepad, choose File | Save As from the menu.
 5. In the resulting box, click the "Save as Type" drop-down box and choose "All Files".
 (We are NOT saving as a .txt type.)
-6. Paste the path "C:\Program Files\R\R-2.7.0\users\QRMBook\.Rprofile" into the 
+6. Paste the path "C:\Program Files\R\R-2.10.1\users\QRMBook\.Rprofile" into the 
 File name box.
 7. Click the Save button.
 

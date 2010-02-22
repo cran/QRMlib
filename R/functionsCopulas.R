@@ -1,8 +1,8 @@
-# QRMlib: version 1.4.2
+# QRMlib: version 1.4.5
 # this file is a component of QRMlib 
 
 # Copyright (C) 2005-07 Alexander McNeil
-# R-language translation/additions Copyright (C) 2006-2007 Scott Ulman
+# R-language translation/additions Copyright (C) 2006-2009 Scott Ulman
 
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -24,22 +24,26 @@
 
 rcopula.gauss <- function(n,  Sigma = equicorr(d, rho), d=2, rho=0.7)
 {
-  d <- dim(Sigma)[1]
-  if(sum(diag(Sigma)) != d)
-    stop("Sigma should be correlation matrix")
-  mnorm <- rmnorm(n, Sigma = Sigma)
-  matrix(pnorm(mnorm), ncol = d)
+  d <- dim(Sigma)[1];
+  #The following fix in 2009 allows passage of negative rho values:
+  diagSum <- sum(diag(Sigma));
+    if (!isTRUE(all.equal(diagSum,d))) 
+        stop("Sigma should be correlation matrix");
+  mnorm <- rmnorm(n, Sigma = Sigma);
+  matrix(pnorm(mnorm), ncol = d);
 }
 
 #################################################################################
 
 rcopula.t <- function(n, df, Sigma = equicorr(d, rho), d=2, rho=0.7)
 {
-  d <- dim(Sigma)[1]
-  if(sum(diag(Sigma)) != d)
-    stop("Sigma should be correlation matrix")
-  tmp <- rmt(n, df, Sigma)
-  matrix(pt(tmp, df), ncol = d)
+  d <- dim(Sigma)[1];
+  #The following fix in 2009 allows passage of negative rho values:
+  diagSum <- sum(diag(Sigma));
+    if (!isTRUE(all.equal(diagSum,d))) 
+        stop("Sigma should be correlation matrix");
+  tmp <- rmt(n, df, Sigma);
+  matrix(pt(tmp, df), ncol = d);
 }
 
 ###################################################################################

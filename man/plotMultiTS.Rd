@@ -5,7 +5,7 @@
 Plots multiple timeSeries objects on the same graph.
 Use this function if the plot.timeSeries() method from fCalendar returns the error
  \dQuote{Error in xy.coords(x, y, xlabel, ylabel, log) :} \cr 
-   \dQuote{\sQuote{x} and sQuote{y} lengths differ}
+   \dQuote{\sQuote{x} and \sQuote{y} lengths differ}
 }
 \usage{
 plotMultiTS(tS, colvec = 1:ncol(tS), type = "l", ltypvec = 1, lwdvec = 1, yrange, format, at, reference.grid, ...)
