@@ -24,7 +24,7 @@
 #include <R_ext/Random.h>
 #include "QRMsim.h"
 
-void frank(long *n, double *theta, double *output)
+void frank(int *n, double *theta, double *output)
 {
  /* Modified by Scott Ulman, 05/23/2006 to work in R rather than S-Plus */
   /*  S_EVALUATOR         */
@@ -52,13 +52,13 @@ void frank(long *n, double *theta, double *output)
 }
 
 
-void rgig(long *n, double *r, double *s, double *p, double *k1, double *k2, double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim)
+void rgig(int *n, double *r, double *s, double *p, double *k1, double *k2, double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim)
 {
  /* Modified by Scott Ulman, 05/23/2006 to work in R rather than S-Plus */
   /* S_EVALUATOR     */
 
   int i=0;
-  long count =0;
+  int count =0;
   double U, Ustar, level, x;
   RANDIN;
 

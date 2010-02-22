@@ -27,16 +27,16 @@
 
 #include "QRMbessel.h"
 
-void besselM3(long *lambda, double *x, long *n, double *err, double *y, long *logvalue)
+void besselM3(int *lambda, double *x, int *n, double *err, double *y, int *logvalue)
 {
   gsl_sf_result result;
-  int status, i, nint;
+  int i, nint;
   double nu;
 
   if (*logvalue == 0){
     nint = (int)*lambda;
     for (i = 0; i < *n; i++){
-      status = gsl_sf_bessel_Kn_e(nint, *(x+i), &result);
+      gsl_sf_bessel_Kn_e(nint, *(x+i), &result);
       *(y+i) = result.val;
       *(err+i) = result.err;
     }
@@ -44,7 +44,7 @@ void besselM3(long *lambda, double *x, long *n, double *err, double *y, long *lo
   if (*logvalue ==1){
     nu = (double)*lambda;
     for (i = 0; i < *n; i++){
-      status = gsl_sf_bessel_lnKnu_e(nu, *(x+i), &result);
+      gsl_sf_bessel_lnKnu_e(nu, *(x+i), &result);
       *(y+i) = result.val;
       *(err+i) = result.err;
     }
@@ -52,21 +52,21 @@ void besselM3(long *lambda, double *x, long *n, double *err, double *y, long *lo
 
 }
 
-void besselM3f(double *lambda, double *x, long *n, double *err, double *y, long *logvalue)
+void besselM3f(double *lambda, double *x, int *n, double *err, double *y, int *logvalue)
 {
   gsl_sf_result result;
-  int status, i;
+  int i;
 
   if (*logvalue == 0){
     for (i = 0; i < *n; i++){
-      status = gsl_sf_bessel_Knu_e(*lambda, *(x+i), &result);
+      gsl_sf_bessel_Knu_e(*lambda, *(x+i), &result);
       *(y+i) = result.val;
       *(err+i) = result.err;
     }
   }
   if (*logvalue == 1){
     for (i = 0; i < *n; i++){
-      status = gsl_sf_bessel_lnKnu_e(*lambda, *(x+i), &result);
+      gsl_sf_bessel_lnKnu_e(*lambda, *(x+i), &result);
       *(y+i) = result.val;
       *(err+i) = result.err;
     }
@@ -74,13 +74,13 @@ void besselM3f(double *lambda, double *x, long *n, double *err, double *y, long 
  }
 
 
-void besselM3z(double *x, long *n, double *err, double *y)
+void besselM3z(double *x, int *n, double *err, double *y)
 {
   gsl_sf_result result;
-  int status, i;
+  int i;
 
   for (i = 0; i < *n; i++){
-    status = gsl_sf_bessel_K0_e(*(x+i), &result);
+    gsl_sf_bessel_K0_e(*(x+i), &result);
     *(y+i) = result.val;
     *(err+i) = result.err;
   }
@@ -88,13 +88,13 @@ void besselM3z(double *x, long *n, double *err, double *y)
 }
 
 
-void psifunc(double *x, long *n, double *err, double *y)
+void psifunc(double *x, int *n, double *err, double *y)
 {
   gsl_sf_result result;
-  int status, i;
+  int i;
 
   for (i = 0; i < *n; i++){
-    status = gsl_sf_psi_e(*(x+i), &result);
+    gsl_sf_psi_e(*(x+i), &result);
     *(y+i) = result.val;
     *(err+i) = result.err;
   }

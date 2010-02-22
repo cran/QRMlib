@@ -36,10 +36,10 @@
 
 /* Mixing distribution for Frank copula */
 
-void frank(long *n, double *theta, double *output);
+void frank(int *n, double *theta, double *output);
 
 /* Simulating generalised inverse Gaussian */
-void rgig(long *n, double *r, double *s, double *p, double *k1, double *k2, double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim);
+void rgig(int *n, double *r, double *s, double *p, double *k1, double *k2, double *lambda, double *chi, double *psi, double *s1, double *s2, double *xsim);
 
 
 

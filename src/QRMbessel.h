@@ -18,12 +18,12 @@
 
 /* Contact: Alexander J. McNeil:  mcneil@math.ethz.ch */
 /* Bessel function of 3rd kind */
-void besselM3( long *lambda, double *x, long *n, double *err, double *y, long *logvalue);
+void besselM3( int *lambda, double *x, int *n, double *err, double *y, int *logvalue);
 
-void besselM3f( double *lambda, double *x, long *n, double *err, double *y, long *logvalue);
+void besselM3f( double *lambda, double *x, int *n, double *err, double *y, int *logvalue);
 
-void besselM3z( double *x, long *n, double *err, double *y);
+void besselM3z( double *x, int *n, double *err, double *y);
 
 /* psi or digamma function */
-void psifunc(double *x, long *n, double *err, double *y);
+void psifunc(double *x, int *n, double *err, double *y);
 

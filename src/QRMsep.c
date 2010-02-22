@@ -23,7 +23,7 @@
 #include "QRMsep.h"
 
 
-void SEprocExciteFunc(long*n, double *times, long *nmarks, double *marktimes, double *marks, double *beta, long *model, double *result)
+void SEprocExciteFunc(int*n, double *times, int *nmarks, double *marktimes, double *marks, double *beta, int *model, double *result)
 {
   int i=0, j;
   double thetime, gamma, delta, rho=0.0, tmp;
